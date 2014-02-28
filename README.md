@@ -21,7 +21,7 @@ This idea can fruitfully be applied to code, for many reasons:
 
 When I started applying this concept to my code (as you can see in [lith](https://github.com/fpereiro/lith/blob/master/lith.js)), I found myself writing this kind of code block, over and over.
 
-```
+```javascript
 if (type (input) !== 'array' && type (input) !== 'undefined') {
    console.log ('Input to my_function must be either an array or undefined, but instead is', input);
    return false;
@@ -30,7 +30,7 @@ if (type (input) !== 'array' && type (input) !== 'undefined') {
 
 Another example:
 
-```
+```javascript
 if (type (input) === 'array') {
    if (input.length !== 3) {
       console.log ('Input to my_function must be an array of length 3, but instead has length', input.length, 'and is', JSON.stringify (input));
@@ -64,7 +64,7 @@ The repetitive parts about the three actions above are:
 
 teishi simplifies the first two parts and allows you to return false just once, at the end of all the checks you want to perform. Using teishi, the examples above can be rewritten like this:
 
-```
+```javascript
 if (teishi.stop ({
    compare: input,
    to: ['array', 'undefined'],
@@ -120,7 +120,7 @@ teishi comes bundled with a few `test` functions:
 
 There's nothing magical about these functions. If you use teishi, you'll be writing your own test functions in no time. To dispel your fears (or to encourage them, I'm not sure) here's the source code for `teishi.test.type`, probably the most useful test function of teishi:
 
-```
+```javascript
    teishi.test.type = function (compare, to, label, label_to, label_of) {
       if (teishi.type (compare) === to) return true;
       else return [
@@ -162,7 +162,7 @@ It takes two arguments:
 
 Let's see an example:
 
-```
+```javascript
 function process_array_of_strings (function, array) {
    if (teishi.stop ([{
       compare: function,
@@ -192,7 +192,7 @@ It's time to explain the `multi` operator. It can take four values:
 
 **Examples:**
 
-```
+```javascript
 teishi.stop ({
    compare: [2, 3, 5],
    to: 3
@@ -223,7 +223,7 @@ The purpose of this is to let another function capture the error message and dec
 
 **Example:**
 
-```
+```javascript
 teishi.stop ({
    compare: 3,
    to: [2, 4, 5],
@@ -242,7 +242,7 @@ This means that when a `multi` value is present, `teishi.stop` feeds the validat
 
 Now, since the validating functions are not aware that a `multi` operation is taking place, their error messages would be off. Consider this example:
 
-```
+```javascript
 teishi.stop ({
    compare: 3,
    to: [2, 4, 5],
@@ -256,7 +256,7 @@ This situation arises when an `'one_of'` or `'each_of'` `multi` value is present
 
 So, to go back to the example, the arguments passed to `teishi.test.equal` (the default test function used above) would be:
 
-```
+```javascript
 compare: 3,
 to: 5,
 label: ...
@@ -316,7 +316,7 @@ teishi depends on [dale](https://github.com/fpereiro/dale)
 
 teishi is written in Javascript. You can use it in the browser by sourcing dale and the main file:
 
-```
+```html
 <script src="dale.js"></script>
 <script src="teishi.js"></script>
 ```
