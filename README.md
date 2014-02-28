@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library and the approac
 
 ## Auto-activation
 
-Auto-activation means that a machine or process stops immediately when an error is found, instead of going on until the faults in the process make it break down completely. Let's restate it: **an auto-activated machine stops of its own accord when detecting that there is a defect.**
+Auto-activation means that a machine or process stops immediately when an error is found, instead of going on until the faults in the process make it break down completely. Let's restate it: **an auto-activated machine stops on its own when it detects a defect.**
 
 This idea can fruitfully be applied to code, for many reasons:
 
@@ -141,7 +141,7 @@ As you can see, this function:
 
 - Returns either true or an error message.
 - Provides a default label ("Input") if no label is passed.
-- Has a mysterious code block within the error message: `label_of ? 'one of ' + label_of : to`. Later we're going to see why, in the [multi section](https://github.com/fpereiro/teishi#teishi.multi).
+- Has a mysterious code block within the error message: `label_of ? label_of : to`. Later we're going to see why, in the [label_of section](https://github.com/fpereiro/teishi#label_of).
 
 ## teishi.stop
 
@@ -228,7 +228,7 @@ teishi.stop ({
    compare: 3,
    to: [2, 4, 5],
    multi: 'one_of'
-}) // returns [true, Input must be one of [2, 4, 5] but instead is 3]
+}, true) // returns [true, Input must be one of [2, 4, 5] but instead is 3]
    // and doesn't log an error to the console.
 ```
 
@@ -240,7 +240,7 @@ teishi.stop takes care of passing each comparison pair to the test functions and
 
 This means that when a `multi` value is present, `teishi.stop` feeds the validating function with a pair of `compare` and `to` values at a time, and stops this process when an error is found.
 
-Now, since the validating functions are not aware that a `multi` operation is taking place, their error messages would be off. Consider this example:
+Now, since the validating functions are not aware that a `multi` operation is taking place, their error messages would be incorrect. Consider this example:
 
 ```javascript
 teishi.stop ({
