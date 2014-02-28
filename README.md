@@ -94,7 +94,7 @@ The most important structure in teishi is the `teishi_step`. A `teishi_step` is 
 
 - `compare`: can be anything. *This object is required.*
 - `to`: can be anything. *This object is required.*
-- `multi`: can be either `undefined`, or a string with the values `'each'`, `'of'` and `'each_of'`. The usage of multi is explained below.
+- `multi`: can be either `undefined`, or a string with the values `'each'`, `'of'` and `'each_of'`. The usage of `multi` is explained [below](https://github.com/fpereiro/teishi#teishimulti).
 - `test`: a function that compares the fields `compare` and `to`. When this value is omitted, teishi uses equality ('===') as the function for comparing.
 - `label`: a string that gives further information about the `compare` field, for error reporting purposes.
 - `label_to`: a string that gives further information about the `to` field, for error reporting purposes.
