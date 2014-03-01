@@ -3,7 +3,7 @@
    "version": "1.0.5",
    "description": "Tool for validating the input of functions.",
    "dependencies": {
-      "dale": "1.0.3"
+      "dale": "1.0.4"
    },
    "main": "teishi.js",
    "author": "Federico Pereiro <fpereiro@gmail.com>",
