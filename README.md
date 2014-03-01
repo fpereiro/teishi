@@ -68,7 +68,7 @@ teishi simplifies the first two parts and allows you to return false just once, 
 if (teishi.stop ({
    compare: input,
    to: ['array', 'undefined'],
-   multi: 'each'
+   multi: 'one_of'
    using: teishi.test.type,
    label: 'Input to my_function'
 })) return false;
