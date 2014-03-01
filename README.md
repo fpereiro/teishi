@@ -68,12 +68,12 @@ teishi simplifies the first two parts and allows you to return false just once, 
 if (teishi.stop ({
    compare: input,
    to: ['array', 'undefined'],
-   multi: 'one_of'
-   using: teishi.test.type,
+   multi: 'one_of',
+   test: teishi.test.type,
    label: 'Input to my_function'
 })) return false;
 
-if (type (input) === 'array') {
+if (teishi.type (input) === 'array') {
    if (teishi.stop ([{
       compare: input.length,
       to: 3,
@@ -81,7 +81,7 @@ if (type (input) === 'array') {
    }, {
       compare: input,
       to: 'string',
-      using: teishi.test.type,
+      test: teishi.test.type,
       multi: 'each',
       label: 'Items of input to my_function'
    }])) return false;
@@ -163,19 +163,19 @@ It takes two arguments:
 Let's see an example:
 
 ```javascript
-function process_array_of_strings (function, array) {
+function process_array_of_strings (fun, array) {
    if (teishi.stop ([{
-      compare: function,
+      compare: fun,
       to: 'function',
       test: teishi.test.type,
       label: 'Function input to process_array_of_strings'
    }, {
       compare: array,
       to: 'string',
-      multi: 'each'
+      multi: 'each',
       test: teishi.test.type,
       label: 'String in array passed to process_array_of_strings'
-   }]) return false;
+   }])) return false;
 }
 ```
 
@@ -195,12 +195,12 @@ It's time to explain the `multi` operator. It can take four values:
 ```javascript
 teishi.stop ({
    compare: [2, 3, 5],
-   to: 3
+   to: 3,
    multi: 'each'
 }); // returns true (error found), since 2 !== 3
 
 teishi.stop ({
-   compare: 3
+   compare: 3,
    to: [2, 3, 5],
    multi: 'one_of'
 }); // returns false (error not found), since 3 === 3
@@ -228,8 +228,8 @@ teishi.stop ({
    compare: 3,
    to: [2, 4, 5],
    multi: 'one_of'
-}, true) // returns [true, Input must be one of [2, 4, 5] but instead is 3]
-   // and doesn't log an error to the console.
+}, true) // returns [true, "Input must be one of [2, 4, 5] but instead is 3"]
+         // and doesn't log an error to the console.
 ```
 
 ## Two more points about `multi`
