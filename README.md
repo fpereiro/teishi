@@ -306,10 +306,6 @@ Let's insert a couple of definitions for the purpose of this section:
 2. If the console object exists (because we are on a good browser or on node.js), it applies its input to `teishi.s` (only if the input is an array, otherwise it uses the input itself) and then prints it to the console.
 3. Always returns false.
 
-## teishi.go
-
-`teishi.go` is a function just like `teishi.stop`, except that it returns the opposite value. If you want to check for the _opposite_ of a test, instead of writing the complementary function, you can just invoke `teishi.go`. It also supports the return\_error\_message flag.
-
 ## Installation
 
 teishi depends on [dale](https://github.com/fpereiro/dale)

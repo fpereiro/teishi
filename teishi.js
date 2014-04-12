@@ -1,5 +1,5 @@
 /*
-teishi - v1.0.5
+teishi - v1.0.6
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -7,6 +7,8 @@ Please refer to README.md to see what this is about.
 */
 
 (function () {
+
+   log = console.log;
 
    // We check for dale.
    if (typeof exports !== 'undefined') {
@@ -17,7 +19,7 @@ Please refer to README.md to see what this is about.
    }
 
    if (dale === undefined) {
-      console.log ('dale is required.');
+      log ('dale is required.');
       return false;
    }
 
@@ -30,6 +32,26 @@ Please refer to README.md to see what this is about.
    }
    else {
       teishi = root.teishi = {};
+   }
+
+   // Wrapper to JSON.parse which returns false instead of an exception if an invalid JSON is passed.
+   teishi.p = function () {
+      try {
+         return JSON.parse.apply (JSON.parse, arguments);
+      }
+      catch (error) {
+         return false;
+      }
+   }
+
+   // Wrapper to JSON.stringify which returns false instead of an exception if an invalid stringified JSON is passed.
+   teishi.s = function () {
+      try {
+         return JSON.stringify.apply (JSON.stringify, arguments);
+      }
+      catch (error) {
+         return false;
+      }
    }
 
    // Taken from http://javascript.crockford.com/remedial.html and modified to add detection of regexes.
@@ -57,7 +79,7 @@ Please refer to README.md to see what this is about.
    // Stringifies inner arguments that are either an array or object. Removes the first and last double quote.
    teishi.stringify = function (error) {
       if (teishi.type (error) !== 'array') {
-         console.log ('Input to teishi.stringify must be either string or array, but instead is', error, 'with type', teishi.type (error));
+         log ('Input to teishi.stringify must be either string or array, but instead is', error, 'with type', teishi.type (error));
          return false;
       }
       else {
@@ -79,11 +101,11 @@ Please refer to README.md to see what this is about.
       // If console exists, we pass the arguments to teishi.stringify and print them to the console after surrounding them by two lines made of dashes.
       if (console) {
          if (teishi.type (error) !== 'array' && teishi.type (error) !== 'string') {
-            console.log ('Input to teishi.e must be either string or array, but instead is', error, 'with type', teishi.type (error));
+            log ('Input to teishi.e must be either string or array, but instead is', error, 'with type', teishi.type (error));
             return false;
          }
          var block_delimiter = '\n----\n';
-         console.log (block_delimiter, teishi.type (error) === 'string' ? error : teishi.stringify (error), block_delimiter);
+         log (block_delimiter, teishi.type (error) === 'string' ? error : teishi.stringify (error), block_delimiter);
       }
       // We always return false.
       return false;
@@ -296,14 +318,6 @@ Please refer to README.md to see what this is about.
          if (return_error_message) return [false];
          else return false;
       }
-   }
-
-   // The inverse of teishi.stop
-   teishi.go = function () {
-      var result = teishi.stop.apply (teishi.stop, arguments);
-      if (teishi.type (result) === 'boolean') result = ! result;
-      else {result [0] = ! result [0]}
-      return result;
    }
 
 }).call (this);
