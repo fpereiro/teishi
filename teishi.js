@@ -1,5 +1,5 @@
 /*
-teishi - v1.0.6
+teishi - v1.0.7
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -100,7 +100,7 @@ Please refer to README.md to see what this is about.
    teishi.e = function (error) {
       // If console exists, we pass the arguments to teishi.stringify and print them to the console after surrounding them by two lines made of dashes.
       if (console) {
-         if (teishi.type (error) !== 'array' && teishi.type (error) !== 'string') {
+         if (teishi.type (error) !== 'array' && teishi.type (error) !== 'string' && teishi.type (error) !== 'boolean') {
             log ('Input to teishi.e must be either string or array, but instead is', error, 'with type', teishi.type (error));
             return false;
          }
