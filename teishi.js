@@ -1,5 +1,5 @@
 /*
-teishi - v1.0.7
+teishi - v1.0.8
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -104,6 +104,9 @@ Please refer to README.md to see what this is about.
             log ('Input to teishi.e must be either string or array, but instead is', error, 'with type', teishi.type (error));
             return false;
          }
+         // If we receive a boolean, the error has already been reported by some other function, so we don't do anything else but to return false.
+         // This is useful for nested teishi.stop calls.
+         if (teishi.type (error) === 'boolean') return false;
          var block_delimiter = '\n----\n';
          log (block_delimiter, teishi.type (error) === 'string' ? error : teishi.stringify (error), block_delimiter);
       }
