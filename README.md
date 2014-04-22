@@ -290,7 +290,21 @@ Let's insert a couple of definitions for the purpose of this section:
 
 **A:** `teishi.stop` assumes that there are no values that `compare` can match, so there cannot be possibly a way to pass the test. Hence, it will always return `false`, plus an error message.
 
-## teishi.stringify
+## Helper functions
+
+### teishi.type
+
+The most useful function of the bunch. It is a patched based on [Crockford's remedial type function](http://javascript.crockford.com/remedial.html) and modified to add detection of regexes.
+
+It receives a single argument and always returns a string with the argument type.
+
+You can invoke it directly.
+
+### teishi.s and teishi.p
+
+Two useful wrappers around JSON.stringify and JSON.parse. They attempt to stringify/parse the argument, and if there is an error, instead of getting an exception, you just get a `false` value.
+
+### teishi.stringify
 
 `teishi.stringify` is a helper function for `teishi.e`, also used to process the error message when it is returned to the user directly (instead of through `teishi.e`.
 
@@ -298,7 +312,7 @@ Let's insert a couple of definitions for the purpose of this section:
 2. For every element of the array, if it is an array, it is displayed as an array (surrounded by "[" and "]"). If it is an object, it is displayed as an object (listing all keys and values, and surrounding it by "{" and "}"). Else, it is displayed as it is.
 3. It returns a string concatenating all the elements in the input array.
 
-## teishi.e
+### teishi.e
 
 `teishi.e` is an error message function. It is very simple:
 
@@ -321,7 +335,7 @@ And you also can use it in node.js. To install: `npm install teishi`
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 300 lines long.
+The complete source code is contained in `teishi.js`. It is about 340 lines long.
 
 ## License
 

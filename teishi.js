@@ -1,5 +1,5 @@
 /*
-teishi - v1.0.8
+teishi - v1.0.9
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -8,7 +8,18 @@ Please refer to README.md to see what this is about.
 
 (function () {
 
-   log = console.log;
+   // *** SETUP ***
+
+   // Useful shorthand.
+   if (typeof exports !== 'undefined') {
+      var log = console.log;
+   }
+   else {
+      window.log = function () {
+         if (console) console.log (arguments);
+         else alert (arguments);
+      }
+   }
 
    // We check for dale.
    if (typeof exports !== 'undefined') {
@@ -16,23 +27,20 @@ Please refer to README.md to see what this is about.
    }
    else {
       var dale = window.dale;
-   }
-
-   if (dale === undefined) {
-      log ('dale is required.');
-      return false;
+      if (dale === undefined) {
+         log ('dale is required.');
+         return false;
+      }
    }
 
    // This code allows us to export the lith in the browser and in the server.
    // Taken from http://backbonejs.org/docs/backbone.html
    var root = this;
    var teishi;
-   if (typeof exports !== 'undefined') {
-      teishi = exports;
-   }
-   else {
-      teishi = root.teishi = {};
-   }
+   if (typeof exports !== 'undefined') teishi = exports;
+   else                                teishi = root.teishi = {};
+
+   // *** HELPER FUNCTIONS ***
 
    // Wrapper to JSON.parse which returns false instead of an exception if an invalid JSON is passed.
    teishi.p = function () {
@@ -108,16 +116,20 @@ Please refer to README.md to see what this is about.
          // This is useful for nested teishi.stop calls.
          if (teishi.type (error) === 'boolean') return false;
          var block_delimiter = '\n----\n';
-         log (block_delimiter, teishi.type (error) === 'string' ? error : teishi.stringify (error), block_delimiter);
+         log (block_delimiter, teishi.type (error) === 'string' ? error : teishi.stringify (error), block_delimiter).replace ('  ', ' ');
       }
       // We always return false.
       return false;
    }
 
+   // *** CONSTANTS ***
+
    teishi.constants = {};
 
    teishi.constants.teishi_step_keys = ['compare', 'to', 'test', 'multi', 'label', 'label_to'];
    teishi.constants.teishi_step_multi_keys = [undefined, 'each', 'one_of', 'each_of'];
+
+   // *** TEST FUNCTIONS ***
 
    // This object contains the test functions bundled with teishi.
    teishi.test = {};
@@ -189,6 +201,8 @@ Please refer to README.md to see what this is about.
       ];
    }
 
+   // *** VALIDATION ***
+
    teishi.validate = function (teishi_steps) {
       // It would be lovely to use teishi here to validate the teishi_step, but we can't, because here we are actually *creating* teishi.
       if (teishi.type (teishi_steps) !== 'object' && teishi.type (teishi_steps) !== 'array') {
@@ -216,6 +230,8 @@ Please refer to README.md to see what this is about.
       // If we reach this point of the function, the input is valid.
       return true;
    }
+
+   // *** THE MAIN FUNCTION ***
 
    teishi.stop = function (teishi_steps, return_error_message) {
       // Since teishi_validate reports validation errors, we just return true (remember, true means that an error was found!).
@@ -306,7 +322,7 @@ Please refer to README.md to see what this is about.
             });
          }
       });
-      // If the error was set to something, it means that there was a validation mistake. Hence, teishi.stop should return TRUE (because we have to stop, that's what true means).
+      // If the error was set to something, it means that there was a validation mistake. Hence, teishi.stop should return TRUE (because we have to stop, that's what TRUE means).
       if (error !== undefined) {
          // If the return_error_message flag is set, we return an array with two elements, the first being the result and the second one the error.
          if (return_error_message) return [true, teishi.stringify (error)]
