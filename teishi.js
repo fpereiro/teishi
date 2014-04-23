@@ -1,5 +1,5 @@
 /*
-teishi - v1.0.9
+teishi - v1.0.10
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -116,7 +116,7 @@ Please refer to README.md to see what this is about.
          // This is useful for nested teishi.stop calls.
          if (teishi.type (error) === 'boolean') return false;
          var block_delimiter = '\n----\n';
-         log (block_delimiter, teishi.type (error) === 'string' ? error : teishi.stringify (error), block_delimiter).replace ('  ', ' ');
+         log (block_delimiter, teishi.type (error) === 'string' ? error : teishi.stringify (error), block_delimiter);
       }
       // We always return false.
       return false;

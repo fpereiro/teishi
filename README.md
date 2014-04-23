@@ -317,7 +317,7 @@ Two useful wrappers around JSON.stringify and JSON.parse. They attempt to string
 `teishi.e` is an error message function. It is very simple:
 
 1. It only accepts a single argument. That argument has to be a string or an array.
-2. If the console object exists (because we are on a good browser or on node.js), it applies its input to `teishi.s` (only if the input is an array, otherwise it uses the input itself) and then prints it to the console.
+2. If the console object exists (because we are on a good browser or on node.js), it applies its input to `teishi.stringify` (only if the input is an array, otherwise it uses the input itself) and then prints it to the console.
 3. Always returns false.
 
 ## Installation
