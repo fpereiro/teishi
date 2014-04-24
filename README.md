@@ -335,7 +335,7 @@ And you also can use it in node.js. To install: `npm install teishi`
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 340 lines long.
+The complete source code is contained in `teishi.js`. It is about 330 lines long.
 
 ## License
 
