@@ -1,5 +1,5 @@
 /*
-teishi - v1.0.11
+teishi - v1.0.12
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -22,7 +22,7 @@ Please refer to README.md to see what this is about.
       }
    }
 
-   // This code allows us to export the lith in the browser and in the server.
+   // This code allows us to export teishi in the browser and in the server.
    // Taken from http://backbonejs.org/docs/backbone.html
    var root = this;
    var teishi;
