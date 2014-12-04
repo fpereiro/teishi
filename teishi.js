@@ -104,11 +104,13 @@ Please refer to readme.md to read the annotated source.
 
       }).join (textArray ? ' ' : ', ');
 
+      if (! isNode) ansi.white = ansi.end = ansi.bold = '';
+
       if (type === 'array' && !textArray) output = ansi.white + '[' + output + ansi.white + ']';
       if (type === 'object')              output = ansi.white + '{' + output + ansi.white + '}';
 
       if (recursive) return output;
-      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + ansi.rcolor () + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
+      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + (isNode ? ansi.rcolor () + '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
    }
 
    // *** TEST FUNCTIONS ***

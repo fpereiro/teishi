@@ -1179,6 +1179,12 @@ We join the returned array with a comma and a space (`', '`), unless we're deali
       }).join (textArray ? ' ' : ', ');
 ```
 
+If we are in the browser, we overwrite the ANSI constants (not the functions) with an empty string so as to not place ANSI codes into `output`.
+
+```javascript
+      if (! isNode) ansi.white = ansi.end = ansi.bold = '';
+```
+
 If `input` is an array or object, and if it is not a `textArray`, we surround `output` with square or curly brackets. We also take care of making these brackets white to make them contrast more clearly against the contents.
 
 ```javascript
@@ -1194,12 +1200,12 @@ If this is a recursive function call, we return `output`.
 
 If it's not, we print the following:
 - The current time in milliseconds minus `ms` (the time in milliseconds when teishi was initialized), which will yield a time offset.
-- The `label`, with a random color as background.
+- The `label`, with a random color as background (notice that we do this only if we are not in the browser).
 - The `output`, bolded.
 - A period at the end.
 
 ```javascript
-      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + ansi.rcolor () + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
+      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + (isNode ? ansi.rcolor () + '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
    }
 ```
 
