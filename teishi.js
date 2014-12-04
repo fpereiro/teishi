@@ -110,7 +110,7 @@ Please refer to readme.md to read the annotated source.
       if (type === 'object')              output = ansi.white + '{' + output + ansi.white + '}';
 
       if (recursive) return output;
-      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + (isNode ? ansi.rcolor () + '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
+      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + (isNode ? ansi.rcolor () : '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
    }
 
    // *** TEST FUNCTIONS ***
