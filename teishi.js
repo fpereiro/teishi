@@ -1,331 +1,366 @@
 /*
-teishi - v1.0.12
+teishi - v2.0.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
-Please refer to README.md to see what this is about.
+Please refer to readme.md to read the annotated source.
 */
 
 (function () {
 
    // *** SETUP ***
 
-   // We check for dale.
-   if (typeof exports !== 'undefined') {
-      var dale = require ('dale');
-   }
-   else {
-      var dale = window.dale;
-      if (dale === undefined) {
-         console.log ('dale is required.');
-         return false;
-      }
-   }
+   var isNode = typeof exports === 'object';
 
-   // This code allows us to export teishi in the browser and in the server.
-   // Taken from http://backbonejs.org/docs/backbone.html
-   var root = this;
-   var teishi;
-   if (typeof exports !== 'undefined') teishi = exports;
-   else                                teishi = root.teishi = {};
+   var dale   = isNode ? require ('dale') : window.dale;
 
-   // *** HELPER FUNCTIONS ***
+   if (isNode) var teishi = exports;
+   else        var teishi = window.teishi = {};
 
-   // Wrapper to JSON.parse which returns false instead of an exception if an invalid JSON is passed.
-   teishi.p = function () {
-      try {
-         return JSON.parse.apply (JSON.parse, arguments);
-      }
-      catch (error) {
-         return false;
-      }
-   }
+   // *** FIVE HELPER FUNCTIONS ***
 
-   // Wrapper to JSON.stringify which returns false instead of an exception if an invalid stringified JSON is passed.
-   teishi.s = function () {
-      try {
-         return JSON.stringify.apply (JSON.stringify, arguments);
-      }
-      catch (error) {
-         return false;
-      }
-   }
-
-   // Taken from http://javascript.crockford.com/remedial.html and modified to add detection of regexes.
-   teishi.type = function (value) {
+   teishi.t = function (value) {
       var type = typeof value;
+      if (type === 'number') {
+         if      (isNaN (value))      type = 'nan';
+         else if (! isFinite (value)) type = 'infinity';
+         else if (value % 1 === 0)    type = 'integer';
+         else                         type = 'float';
+      }
       if (type === 'object') {
-         if (value) {
-            if (Object.prototype.toString.call (value) == '[object Array]') {
-               type = 'array';
-            }
-            if (value instanceof RegExp) {
-               type = 'regex';
-            }
-         } else {
-            type = 'null';
-         }
+         if (value === null)                                               type = 'null';
+         if (Object.prototype.toString.call (value) === '[object Array]')  type = 'array';
+         if (Object.prototype.toString.call (value) === '[object RegExp]') type = 'regex';
       }
       return type;
    }
 
-   teishi.is_integer = function (value) {
-      return teishi.type (value) === 'number' && (value % 1 === 0);
+   teishi.s = function () {
+      try {return JSON.stringify.apply (JSON.stringify, arguments)}
+      catch (error) {return false}
    }
 
-   // Stringifies inner arguments that are either an array or object. Removes the first and last double quote.
-   teishi.stringify = function (error) {
-      if (teishi.type (error) !== 'array') {
-         console.log ('Input to teishi.stringify must be either string or array, but instead is', error, 'with type', teishi.type (error));
-         return false;
-      }
-      else {
-         return dale.do (error, function (v) {
-            if (teishi.type (v) === 'array') {
-               return '[' + v.join (', ') + ']'
-            }
-            if (teishi.type (v) === 'object') {
-               return '{' + dale.do (v, function (v, k) {
-                  return k + ': ' + v;
-               }).join (', ') + '}';
-            }
-            else return v;
-         }).join (' ');
-      }
+   teishi.p = function () {
+      try {return JSON.parse.apply (JSON.parse, arguments)}
+      catch (error) {return false}
    }
 
-   teishi.e = function (error) {
-      // If console exists, we pass the arguments to teishi.stringify and print them to the console after surrounding them by two lines made of dashes.
-      if (console) {
-         if (teishi.type (error) !== 'array' && teishi.type (error) !== 'string' && teishi.type (error) !== 'boolean') {
-            console.log ('Input to teishi.e must be either string or array, but instead is', error, 'with type', teishi.type (error));
-            return false;
+   teishi.c = function (input, seen) {
+      var type = teishi.t (input);
+      if (type !== 'array' && type !== 'object') return input;
+
+      if (seen === undefined) seen = [];
+
+      if (dale.stopOn (seen, true, function (v) {
+         return input === v;
+      })) return '[Circular Reference]';
+
+      seen.push (input);
+
+      var output = type === 'array' ? [] : {};
+
+      dale.do (input, function (v, k) {
+         output [k] = teishi.c (v, seen);
+      });
+
+      return output;
+   }
+
+   var ms = new Date ().getTime ();
+
+   teishi.l = function (label, message, lastColor, recursive) {
+
+      var ansi = {
+         bold: '\033[1m',
+         end: '\033[0m',
+         white: '\033[37m',
+         color:  function () {return '\033[3' + Math.round (Math.random () * 5 + 1) + 'm'},
+         rcolor: function () {return '\033[4' + Math.round (Math.random () * 5 + 1) + 'm'}
+      }
+
+      var type = teishi.t (message);
+
+      if (recursive === undefined) message = teishi.c (message);
+
+      if (message === undefined) message = [message];
+
+      var textArray = type === 'array' && !recursive;
+
+      var output = dale.do (message, function (v, k) {
+
+         if (teishi.t (v) === 'string' && !textArray) v = '"' + v + '"';
+
+         if (teishi.t (v) === 'array' || teishi.t (v) === 'object') v = teishi.l (label, v, lastColor, true);
+
+         if (type === 'object') v = (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ' + v;
+
+         if (isNode) {
+            var color = lastColor;
+            while (color === lastColor) color = ansi.color ();
+            v = color + v;
          }
-         // If we receive a boolean, the error has already been reported by some other function, so we don't do anything else but to return false.
-         // This is useful for nested teishi.stop calls.
-         if (teishi.type (error) === 'boolean') return false;
-         var block_delimiter = '\n----\n';
-         console.log (block_delimiter, teishi.type (error) === 'string' ? error : teishi.stringify (error), block_delimiter);
+
+         return v;
+
+      }).join (textArray ? ' ' : ', ');
+
+      if (type === 'array' && !textArray) output = ansi.white + '[' + output + ansi.white + ']';
+      if (type === 'object')              output = ansi.white + '{' + output + ansi.white + '}';
+
+      if (recursive) return output;
+      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + ansi.rcolor () + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
+   }
+
+   // *** TEST FUNCTIONS ***
+
+   teishi.makeTest = function (fun, clauses) {
+
+      if (teishi.t (fun) !== 'function') {
+         return teishi.l ('teishi.makeTest', ['fun passed to teishi.makeTest should be a function but instead is', fun, 'with type', teishi.t (fun)]);
       }
-      // We always return false.
-      return false;
+      if (teishi.t (clauses) === 'string') clauses = [clauses];
+      if (teishi.t (clauses) !== 'array') {
+         return teishi.l ('teishi.makeTest', ['clauses argument passed to teishi.makeTest should be an array but instead is', clauses, 'with type', teishi.t (clauses)]);
+      }
+      if (teishi.t (clauses [0]) !== 'string') {
+         return teishi.l ('teishi.makeTest', ['shouldClause passed to teishi.makeTest should be a string but instead is', clauses [0], 'with type', teishi.t (clauses [0])]);
+      }
+
+      if (clauses [1] !== undefined) {
+         if (teishi.t (clauses [1]) !== 'array') clauses [1] = [clauses [1]];
+
+         var clausesResult = dale.stopOnNot (clauses [1], true, function (v) {
+            if (teishi.t (v) === 'string' || teishi.t (v) === 'function') return true;
+            return teishi.l ('teishi.makeTest', ['Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', teishi.t (v)]);
+         });
+         if (clausesResult !== true) return;
+      }
+
+      return function (functionName, names, compare, to, eachValue, ofValue) {
+         var result = fun.apply (fun, [compare, to]);
+         if (result === true) return true;
+         if (teishi.t (result) === 'array') return result;
+         var error = [];
+
+         if (eachValue !== undefined)  error.push ('each of the');
+         if (names [0])                error.push (names [0]);
+         if (functionName)             error.push ('passed to ' + functionName);
+                                       error.push (clauses [0]);
+         if (ofValue !== undefined)    error.push ('one of');
+             ofValue !== undefined ?   error.push (ofValue) :      error.push (to);
+         if (names [1])                error.push ('(' + names [1] + ')');
+             eachValue !== undefined ? error.push ('but one of') : error.push ('but instead');
+         if (eachValue !== undefined)  error.push (eachValue);
+                                       error = error.concat (['is', compare]);
+
+         error = error.concat (dale.do (clauses [1], function (v) {
+            if (teishi.t (v) !== 'function') return v;
+            else return v.apply (v, [compare, to]);
+         }));
+         return error;
+      }
+   }
+
+   teishi.test = {
+
+      type:     teishi.makeTest (
+         function (a, b) {return teishi.t (a) === b},
+         ['should have as type', ['with type', teishi.t]]
+      ),
+
+      equal:    teishi.makeTest (function (a, b) {
+         function simple (i) {return teishi.t (i) !== 'array' && teishi.t (i) !== 'object'}
+         return (function inner (a, b) {
+            if (simple (a) && simple (b))      return a === b;
+            if (teishi.t (a) !== teishi.t (b)) return false;
+            return dale.stopOn (a, false, function (v, k) {
+               return inner (v, b [k]);
+            });
+         } (a, b))
+      }, 'should be equal to'),
+
+      notEqual: teishi.makeTest (function (a, b) {
+         function simple (i) {return teishi.t (i) !== 'array' && teishi.t (i) !== 'object'}
+         return ! (function inner (a, b) {
+            if (simple (a) && simple (b))      return a === b;
+            if (teishi.t (a) !== teishi.t (b)) return false;
+            return dale.stopOn (a, false, function (v, k) {
+               return inner (v, b [k]);
+            });
+         } (a, b))
+      }, 'should not be equal to'),
+
+      range:    teishi.makeTest (function (a, b) {
+         if (teishi.t (b) !== 'object') {
+            return ['Range options object must be an object but instead is', b, 'with type', teishi.t (b)];
+         }
+         // If there are no conditions, we return true.
+         if (teishi.s (b) === '{}') return true;
+         return dale.stopOnNot (b, true, function (v, k) {
+            if (k !== 'min' && k !== 'max' && k !== 'less' && k !== 'more') {
+               return ['Range options must be one of "min", "max", "less" and "more", but instead is', k]
+            }
+            if (k === 'min')  return a >= v;
+            if (k === 'max')  return a <= v;
+            if (k === 'less') return a < v;
+            if (k === 'more') return a > v;
+         });
+      }, 'should be in range'),
+
+      match:    teishi.makeTest (function (a, b) {
+         if (teishi.t (a) !== 'string') {
+            return ['Invalid comparison string passed to teishi.test.match. Comparison string must be of type string but instead is', a, 'with type', teishi.t (a)];
+         }
+         if (teishi.t (b) !== 'regex') {
+            return ['Invalid regex passed to teishi.test.match. Regex must be of type regex but instead is', b, 'with type', teishi.t (b)];
+         }
+         return a.match (b) !== null;
+      }, 'should match')
    }
 
    // *** CONSTANTS ***
 
-   teishi.constants = {};
-
-   teishi.constants.teishi_step_keys = ['compare', 'to', 'test', 'multi', 'label', 'label_to'];
-   teishi.constants.teishi_step_multi_keys = [undefined, 'each', 'one_of', 'each_of'];
-
-   // *** TEST FUNCTIONS ***
-
-   // This object contains the test functions bundled with teishi.
-   teishi.test = {};
-
-   teishi.test.equal = function (compare, to, label, label_to, label_of) {
-      if (compare === to) return true;
-      // Notice the pattern "label_of ? label_of : to". It means that when label_of is defined, we're working with a multi object which has "one_of" or "each_of" as multi value. This means that the particular "to" value is not consequential; instead, we want to print the whole list of possible values TO WHICH the "compare" field may match.
-      else return [
-         label ? label : 'Input',
-         'must be equal to',
-         label_of ? 'one of' : '',
-         label_of ? label_of : to,
-         label_to ? '(' + label_to + ')' : '',
-         'but instead is',
-         compare
-      ];
-   }
-
-   teishi.test.not_equal = function (compare, to, label, label_to, label_of) {
-      if (compare !== to) return true;
-      else return [
-         label ? label : 'Input',
-         'must not be equal to',
-         label_of ? 'one of' : '',
-         label_of ? label_of : to,
-         label_to ? '(' + label_to + ')' : '',
-         'but instead is',
-         compare
-      ];
-   }
-
-   teishi.test.type = function (compare, to, label, label_to, label_of) {
-      if (teishi.type (compare) === to) return true;
-      else return [
-         label ? label : 'Input',
-         'must be of type',
-         label_of ? 'one of' : '',
-         label_of ? label_of : to,
-         label_to ? '(' + label_to + ')' : '',
-         'but instead is',
-         compare,
-         'with type',
-         teishi.type (compare)
-      ];
-   }
-
-   teishi.test.match = function (compare, to, label, label_to, label_of) {
-      // If input is invalid, we send the error message straight to teishi.e and return null.
-      if (teishi.type (compare) !== 'string') return ['Invalid "compare" field passed to teishi.test.match: "compare" field must be of type string but instead is', compare, 'which has type', teishi.type (compare)];
-      if (teishi.type (to) !== 'regex') return ['Invalid "to" field passed to teishi.test.match: "to" field must be of type regex but instead is', to, 'which has type', teishi.type (to)];
-      if (compare.match (to) !== null) return true;
-      else return [
-         label ? label : 'Input',
-         'must match',
-         to,
-         'but instead is',
-         compare
-      ];
-   }
-
-   teishi.test.is_integer = function (compare, to, label, label_to, label_of) {
-      if (teishi.is_integer (compare)) return true;
-      else return [
-         label ? label : 'Input',
-         'must be an integer but instead is',
-         compare,
-         'with type',
-         teishi.type (compare)
-      ];
+   teishi.k = {
+      options: ['multi', 'test'],
+      multi:   [undefined, 'each', 'oneOf', 'eachOf']
    }
 
    // *** VALIDATION ***
 
-   teishi.validate = function (teishi_steps) {
-      // It would be lovely to use teishi here to validate the teishi_step, but we can't, because here we are actually *creating* teishi.
-      if (teishi.type (teishi_steps) !== 'object' && teishi.type (teishi_steps) !== 'array') {
-         return teishi.e (['Input to teishi must be either a teishi_step or an array of teishi_steps but instead is', teishi_steps]);
-      }
-      // If teishi_steps is a single object, we wrap it in an array, so that we can process it with the same code that processes an array of objects.
-      if (teishi.type (teishi_steps) === 'object') teishi_steps = [teishi_steps];
+   teishi.validateRule = function (rule) {
 
-      // If we passed the object to the call to dale.stop_on below, dale would iterate on the keys of the object, instead of on the object itself, as intended when we're processing an array of objects. That's why we wrote the line above.
-      if (dale.stop_on (teishi_steps, false, function (v, k) {
-         if (teishi.type (v) !== 'object') return teishi.e (['teishi was expecting an array of teishi_steps but instead, element #', element, 'is', v, 'and has type', teishi.type (v)]);
-         // For each key in the object...
-         if (dale.stop_on (v, false, function (v2, k2) {
-            // ... we check that each of them matches a valid teishi_step_key.
-            if (dale.stop_on (teishi.constants.teishi_step_keys, true, function (v3) {
-               return k2 === v3;
-            }) !== true) return teishi.e (['Every key in a teishi_step must match one of', teishi.constants.teishi_step_keys, 'but object', v, 'has invalid key', k2]);
-         }) === false) return false;
-         // We check that the multi key of the object is a valid one.
-         if (dale.stop_on (teishi.constants.teishi_step_multi_keys, true, function (v2) {
-            return v.multi === v2;
-         }) !== true) return teishi.e (['The multi key of a teishi_step must match one of', teishi.constants.teishi_step_multi_keys, 'but object', v, 'has invalid key', v.multi]);
-      // Since the test was not passed but teishi.e was already called, we return false to exit teishi.stop.
-      }) === false) return false;
-      // If we reach this point of the function, the input is valid.
+      var ruleType = teishi.t (rule);
+      if (ruleType === 'function' || ruleType === 'boolean') return true;
+      if (ruleType !== 'array') {
+         return ['each teishi rule must be an array or boolean or function but instead is', rule, 'with type', ruleType];
+      }
+
+      if (! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
+
+      if (rule.length < 3 || rule.length > 4) {
+         return ['Each teishi proper rule must be an array of length between 3 and 4, but instead is', rule, 'and has length', rule.length];
+      }
+
+      if (rule [3] !== undefined) {
+
+         if (teishi.t (rule [3]) !== 'object') {
+            return ['teishi rule options must be undefined or an object but instead is', rule [3], 'with type', teishi.t (rule [3])];
+         }
+
+         var result = dale.stopOnNot (rule [3], true, function (v, k) {
+            if (dale.stopOn (teishi.k.options, true, function (v2) {
+               return k === v2;
+            }) === false) {
+               return ['Every key in a teishi rule option object must match one of', teishi.k.options, 'but', rule, 'has invalid key', k];
+            }
+            return true;
+         });
+
+         if (result !== true) return result;
+
+         if (dale.stopOn (teishi.k.multi, true, function (v) {
+            return v === rule [3].multi;
+         }) !== true) {
+            return ['The "multi" key of a teishi rule option must match one of', teishi.k.multi, 'but option', rule, 'has invalid key', rule [3].multi];
+         }
+
+         if (rule [3].test !== undefined && teishi.t (rule [3].test) !== 'function') {
+            return ['The "test" value passed to a teishi rule option must be undefined or a function but instead is', rule [3].test, 'in rule', rule];
+         }
+      }
+
       return true;
    }
 
-   // *** THE MAIN FUNCTION ***
+   // *** THE MAIN FUNCTIONS ***
 
-   teishi.stop = function (teishi_steps, return_error_message) {
-      // Since teishi_validate reports validation errors, we just return true (remember, true means that an error was found!).
-      if (teishi.validate (teishi_steps) === false) return true;
-      // If teishi_step is a single object, we wrap it in an array, so that we can process it with the same code that processes an array of objects.
-      if (teishi.type (teishi_steps) === 'object') teishi_steps = [teishi_steps];
+   teishi.v = function () {
 
-      /*
-         teishi.stop stops at the first validation error found. Hence, we only need to set a single variable for holding this error.
+      var functionName = teishi.t (arguments [0]) === 'string' ? arguments [0] : '';
+      var rule         = teishi.t (arguments [0]) === 'string' ? arguments [1] : arguments [0];
+      var mute         = teishi.t (arguments [0]) === 'string' ? arguments [2] : arguments [1];
 
-         You may now ask: why hold the error in a variable instead of returning it from the functions that perform the checks?
-
-         dale.stop_on, used below in a nested fashion to iterate over teishi_steps and then over multi operators (if present) becomes unwieldy if I want to return an error message as indication of an error, instead of false.
-
-         If I wrote a function called dale.stop_on_not, which stops when a value is not that, I could invoke "dale.stop_on (object, true, function...)", but I figured that it was not worth it. I'd rather set the error variable when an error is found and then cascade a false value up the chain of nested checks, to make it stop at once.
-      */
-
-      var error;
-
-      dale.stop_on (teishi_steps, false, function (v) {
-         // We set the default test (teishi.test.equal) is none is present
-         if (v.test === undefined) v.test = teishi.test.equal;
-
-         // The simplest case: v.multi === undefined
-         if (v.multi === undefined) {
-            var result = v.test (v.compare, v.to, v.label, v.label_to);
-            if (result === true) return true;
-            else {
-               error = result;
-               return false;
-            }
-         }
-         // v.multi === 'each'. Hence, we iterate over v.compare
-         else if (v.multi === 'each') {
-            // If this is true, we have nothing to compare, so we return true.
-            if (v.compare === {} || v.compare === [] || v.compare === undefined) return true;
-            // We perform the test.
-            return dale.stop_on (v.compare, false, function (v2) {
-               var result = v.test (v2, v.to, v.label, v.label_to);
-               if (result === true) return true;
-               else {
-                  error = result;
-                  return false;
-               }
-            });
-         }
-         // v.multi === 'one_of'. Hence, we iterate over v.to. Notice how we stop at the first true value, since this renders compare as valid.
-         else if (v.multi === 'one_of') {
-            // If this is true, we cannot possible find a match. We return false.
-            if (v.to === {} || v.to === [] || v.to === undefined) {
-               error = ['To field of v is', v.to, 'but multi attribute', v.multi, 'requires it to be non-empty, at teishi step', v];
-               return false;
-            }
-            // We perform the test.
-            var of_result = dale.stop_on (v.to, true, function (v2) {
-               var result = v.test (v.compare, v2, v.label, v.label_to, v.to);
-               if (result === true) return true;
-               else {
-                  return result;
-               }
-            });
-            if (of_result === true) return true;
-            else {
-               error = of_result;
-               return false;
-            }
-         }
-         // The most complex case: v.multi === 'each_of'. Notice how it is a combination of both 'each' and 'one_of'.
-         else {
-            if (v.compare === {} || v.compare === [] || v.compare === undefined) return true;
-            if (v.to === {} || v.to === [] || v.to === undefined) {
-               error = ['To field of v is', v.to, 'but multi attribute', v.multi, 'requires it to be non-empty, at teishi step', v];
-               return false;
-            }
-            return dale.stop_on (v.compare, false, function (v2) {
-               var of_result = dale.stop_on (v.to, true, function (v3) {
-                  var result = v.test (v2, v3, v.label, v.label_to, v.to);
-                  if (result === true) return true;
-                  else {
-                     return result;
-                  }
-               });
-               if (of_result === true) return true;
-               else {
-                  error = of_result;
-                  return false;
-               }
-            });
-         }
-      });
-      // If the error was set to something, it means that there was a validation mistake. Hence, teishi.stop should return TRUE (because we have to stop, that's what TRUE means).
-      if (error !== undefined) {
-         // If the return_error_message flag is set, we return an array with two elements, the first being the result and the second one the error.
-         if (return_error_message) return [true, teishi.stringify (error)]
-         else {
-            // We report the error and return true.
-            teishi.e (error);
-            return true;
-         }
+      if (teishi.t (mute) !== 'boolean' && mute !== undefined) {
+         teishi.l ('teishi.v', ['mute argument passed to teishi must be boolean or undefined but instead is', mute, 'with type', teishi.t (mute)]);
+         return false;
       }
+
+      var validation = teishi.validateRule (rule);
+      if (validation !== true) {
+         teishi.l ('teishi.v', validation);
+         return false;
+      }
+
+      if (teishi.t (rule) === 'boolean')  return rule;
+      if (teishi.t (rule) === 'function') return teishi.v (functionName, rule.call (rule), mute);
+
+      if (rule.length === 0) return true;
+
+      if (teishi.t (rule [0]) === 'boolean' && rule.length === 2 && teishi.t (rule [1]) === 'array') {
+         if (rule [0] === false) return true;
+         else return teishi.v (functionName, rule [1], mute);
+      }
+
+      if (! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) {
+         return dale.stopOnNot (rule, true, function (rule) {
+            return teishi.v (functionName, rule, mute);
+         });
+      }
+
+      var multi;
+      var test = teishi.test.type;
+      if (rule [3]) {
+         multi = rule [3].multi;
+         if (rule [3].test) test = rule [3].test;
+      }
+
+      var result;
+      var names = teishi.t (rule [0]) === 'array' ? rule [0] : [rule [0]];
+
+      if ((multi === 'each' || multi === 'eachOf') && ((teishi.t (rule [1]) === 'array' && rule [1].length === 0) || (teishi.t (rule [1]) === 'object' && teishi.s (rule [1]) === "{}") || rule [1] === undefined)) {
+         return true;
+      }
+
+      if ((multi === 'oneOf' || multi === 'eachOf') && ((teishi.t (rule [2]) === 'array' && rule [2].length === 0) || (teishi.t (rule [2]) === 'object' && teishi.s (rule [2]) === "{}") || rule [2] === undefined)) {
+         result = ['To field of teishi rule is', rule.to, 'but multi attribute', multi, 'requires it to be non-empty, at teishi step', rule];
+      }
+
+      else if (multi === undefined) {
+         result = test.apply (test, [functionName, names, rule [1], rule [2]]);
+      }
+
+      else if (multi === 'each') {
+         result = dale.stopOnNot (rule [1], true, function (v) {
+            return test.apply (test, [functionName, names, v, rule [2], rule [1]]);
+         });
+      }
+
+      else if (multi === 'oneOf') {
+         result = dale.stopOn (rule [2], true, function (v) {
+            return test.apply (test, [functionName, names, rule [1], v, undefined, rule [2]]);
+         });
+      }
+
       else {
-         // The sole difference between these is that false is returned either as the first element of an array or just as itself.
-         if (return_error_message) return [false];
-         else return false;
+         result = dale.stopOnNot (rule [1], true, function (v) {
+            return dale.stopOn (rule [2], true, function (v2) {
+               return test.apply (test, [functionName, names, v, v2, rule [1], rule [2]]);
+            });
+         });
+      }
+
+      if (result === true) return true;
+      if (mute) return result;
+      else {
+         teishi.l ('teishi.v', result);
+         return false;
       }
    }
 
-}).call (this);
+   teishi.stop = function () {
+      var result = teishi.v.apply (teishi.v, arguments);
+      if (result === true) return false;
+      else return true;
+   }
+
+}) ();

@@ -1,9 +1,9 @@
 {
    "name": "teishi",
-   "version": "1.0.12",
+   "version": "2.0.0",
    "description": "Tool for validating the input of functions.",
    "dependencies": {
-      "dale": "1.1.0"
+      "dale": "2.1.1"
    },
    "main": "teishi.js",
    "author": "Federico Pereiro <fpereiro@gmail.com>",
@@ -12,7 +12,7 @@
       "type": "Public Domain",
       "url": "http://github.com/fpereiro/teishi#license"
    }],
-   "keywords": ["error checking", "functional"],
+   "keywords": ["error checking", "functional", "test", "testing"],
    "repository" : {
       "type": "git",
       "url": "http://github.com/fpereiro/teishi.git"

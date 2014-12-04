@@ -1,0 +1,444 @@
+/*
+teishi - v2.0.0
+
+Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
+
+Run the examples by either including the script in a webpage or by running `node example` at the command prompt.
+*/
+
+(function () {
+
+   var isNode = typeof exports === 'object';
+
+   var dale   = isNode ? require ('dale')        : window.dale;
+   var teishi = isNode ? require ('./teishi.js') : window.teishi;
+
+   function tester (fun, inputs) {
+      var funame    = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$1');
+      var arglength = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$2').split (',').length;
+      dale.do (inputs, function (v, k) {
+         teishi.l (funame + ':' + k, arglength < 2 ? fun.call (fun, v) : fun.apply (fun, v));
+         console.log ('');
+
+      });
+   }
+
+   function myFunctionOld (input) {
+      if (teishi.t (input) !== 'array' && teishi.t (input) !== 'undefined') {
+         console.log ('Input to myFunction must be either an array or undefined, but instead is', input);
+         return false;
+      }
+
+      if (teishi.t (input) === 'array') {
+         if (input.length !== 3) {
+            console.log ('Input to myFunction must be an array of length 3, but instead has length', input.length, 'and is', JSON.stringify (input));
+            return false;
+         }
+         for (var item in input) {
+            if (teishi.t (input [item]) !== 'string') {
+               console.log ('Each item of the input to myFunction must be a string, but instead is', input [item]);
+               return false;
+            }
+         }
+      }
+
+      return true;
+   }
+
+   function myFunction (input) {
+      if (teishi.stop ('myFunction', [
+         ['input', input, ['array', 'undefined'], {multi: 'oneOf'}],
+         [teishi.t (input) === 'array', [
+            function () {
+               return ['input.length', input.length, 3, {test: teishi.test.equal}]
+            },
+            ['items of input', input, 'string', {multi: 'each'}]
+         ]]
+      ])) return false;
+
+      return true;
+   }
+
+   var myFunctionInput = {
+      invalid1: 'aaa',
+      invalid2: 333,
+      invalid3: ['a', 'b'],
+      invalid4: [1, 2, 3],
+      valid: ['a', 'b', 'c']
+   }
+
+   tester (myFunctionOld, myFunctionInput);
+   tester (myFunction, myFunctionInput);
+
+   function example1 (counter, callback) {
+      if (teishi.stop ('example1', [
+         ['counter', counter, 'integer'],
+         ['callback', callback, ['function', 'undefined'], {multi: 'oneOf'}]
+      ])) return false;
+
+      return true;
+   }
+
+   tester (example1, {
+      invalid1: [3.14, function () {}],
+      invalid2: [333, 'just a string'],
+      valid1: [14],
+      valid2: [27, function () {}]
+   });
+
+   function example2 (action, limit) {
+      if (teishi.stop ('example2', [
+         ['action', action, ['create', 'read', 'update', 'delete'], {multi: 'oneOf', test: teishi.test.equal}],
+         ['limit', limit, 'integer'],
+         [['limit', 'page size'], limit, {min: 0, max: 100}, {test: teishi.test.range}]
+      ])) return false;
+
+      return true;
+   }
+
+   tester (example2, {
+      invalid1: ['creat', 200],
+      invalid2: ['create', 200],
+      invalid3: ['update', 10.5],
+      valid: ['read', 10]
+   });
+
+   function example3 (input) {
+      if (teishi.stop ('example3', [
+         ['input', input, 'object'],
+         ['keys of input', dale.keys (input), ['action', 'limit'], {multi: 'eachOf', test: teishi.test.equal}],
+         function () {return [
+            ['input.action', input.action, ['create', 'read', 'update', 'delete'], {multi: 'oneOf', test: teishi.test.equal}],
+            ['input.limit', input.limit, 'integer'],
+            [['input.limit', 'page size'], input.limit, {min: 0, max: 100}, {test: teishi.test.range}]
+         ]}
+      ])) return false;
+
+      return true;
+   }
+
+   tester (example3, {
+      invalid1: ['creat', 200],
+      invalid2: {
+         action: 'creat',
+         limit: 200
+      },
+      invalid3: {
+         actionn: 'create',
+         limit: 10.5
+      },
+      valid: {
+         action: 'read',
+         limit: 10
+      }
+   });
+
+   function example4 (input) {
+      return teishi.v (['input', input, [1, 2, 3], {test: teishi.test.equal}]);
+   }
+
+   tester (example4, {
+      invalid: [1, 2, '3'],
+      valid: [1, 2, 3]
+   });
+
+   function example5 (input) {
+      return teishi.v (['input', input, [1, 2, 3], {test: teishi.test.notEqual}]);
+   }
+
+   tester (example5, {
+      invalid: [1, 2, 3],
+      valid: [1, 2, '3']
+   })
+
+   function example6 (limit) {
+      return teishi.v ([['limit', 'page size'], limit, {more: 0, less: 100}, {test: teishi.test.range}]);
+   }
+
+   tester (example6, {
+      invalid1: 0,
+      invalid2: 100,
+      valid: 0.1
+   });
+
+   function example7 (limit) {
+      return teishi.v ([['limit', 'page size'], limit, {min: 0, less: 100}, {test: teishi.test.range}]);
+   }
+
+   tester (example7, {
+      invalid1: -0.0001,
+      invalid2: 100,
+      valid: 0.1
+   });
+
+   function example8 (identifier) {
+      return teishi.v ([['identifier', 'alphanumeric string'], identifier, /^[0-9a-zA-Z]+$/, {test: teishi.test.match}]);
+   }
+
+   tester (example8, {
+      invalid1: 444,
+      invalid2: 'my-variable',
+      valid: 'hax0r'
+   });
+
+   function example9 (input) {
+      return teishi.v (['length of input', input.length, [1, 2, 3], {multi: 'oneOf', test: teishi.test.equal}]);
+   }
+
+   tester (example9, {
+      invalid1: [],
+      invalid2: [1, 1, 1, 1],
+      valid: ['a']
+   });
+
+   function example10 (input) {
+      return teishi.v (['length of input', input.length, {cant: 1, touch: 2, this: 3}, {multi: 'oneOf', test: teishi.test.equal}]);
+   }
+
+   tester (example10, {
+      invalid1: [],
+      invalid2: [1, 1, 1, 1],
+      valid: ['a']
+   });
+
+   function example11 (input) {
+      return teishi.v (['input', input, 'integer', {multi: 'each'}]);
+   }
+
+   tester (example11, {
+      invalid1: 'a',
+      invalid2: ['a'],
+      valid1: 1,
+      valid2: [1],
+      valid3: {a: 1}
+   });
+
+   function example12 (input) {
+      return teishi.v (['input', input, 'integer', {multi: 'oneOf'}]);
+   }
+
+   tester (example12, {
+      invalid: 'a',
+      valid: 1
+   });
+
+   function example13 (input) {
+      return teishi.v (['input', input, ['integer'], {multi: 'oneOf'}]);
+   }
+
+   tester (example13, {
+      invalid: 'a',
+      valid: 1
+   });
+
+   function example14 (input) {
+      return teishi.v (['input', input, 'integer', {multi: 'each'}]);
+   }
+
+   tester (example14, {
+      invalid: /b/,
+      valid1: undefined,
+      valid2: [],
+      valid3: {},
+      valid4: 1987
+   });
+
+   function example15 (input) {
+      return teishi.v (['input', input, undefined, {multi: 'oneOf'}]);
+   }
+
+   function example16 (input) {
+      return teishi.v (['input', input, [], {multi: 'oneOf'}]);
+   }
+
+   function example17 (input) {
+      return teishi.v (['input', input, {}, {multi: 'oneOf'}]);
+   }
+
+   tester (example15, {
+      invalid1: 'a',
+      invalid2: 2,
+      invalid3: []
+   });
+
+   tester (example16, {
+      invalid1: 'a',
+      invalid2: 2,
+      invalid3: []
+   });
+
+   tester (example17, {
+      invalid1: 'a',
+      invalid2: 2,
+      invalid3: []
+   });
+
+   function example18Exception (array) {
+      var result;
+      try {
+         result = teishi.v ([
+            ['array', array, 'array'],
+            ['array length', array.length, 3, {test: teishi.test.equal}]
+         ]);
+      }
+      catch (err) {result = 'This function crashed! Please put a function guard.'}
+      return result;
+   }
+
+   tester (example18Exception, {
+      invalid1: 'a',
+      invalid2: ['a'],
+      valid: [1, 2, 3]
+   });
+
+   function example18 (array) {
+      return teishi.v ([
+         ['array', array, 'array'],
+         function () {return ['array length', array.length, 3, {test: teishi.test.equal}]}
+      ]);
+   }
+
+   tester (example18, {
+      invalid1: 'a',
+      invalid2: ['a'],
+      valid: [1, 2, 3]
+   });
+
+   function example19 (input) {
+      return teishi.v ([
+         [teishi.t (input) === 'array', [
+            function () {
+               return ['input.length', input.length, 3, {test: teishi.test.equal}]
+            },
+            ['items of input', input, 'string', {multi: 'each'}]
+         ]]
+      ]);
+   }
+
+   tester (example19, {
+      invalid: ['a'],
+      valid1: /aaaa/,
+      valid2: function () {},
+      valid3: ['a', 'b', 'c'],
+   });
+
+   function example20 (options) {
+      return teishi.v ([
+         ['options', options, 'object'],
+         function () {
+            return [
+               options.port !== undefined, [
+                  ['options.port', options.port, 'integer'],
+                  ['options.port', options.port, {min: 1, max: 65536}, {test: teishi.test.range}]
+               ]
+            ]
+         }
+      ]);
+   }
+
+   tester (example20, {
+      invalid1: 'a',
+      invalid2: /aaaa/,
+      invalid3: {port: '80000'},
+      invalid4: {port: 80000},
+      valid1: {},
+      valid2: {port: 8000}
+   });
+
+   function validateWidget21 (widget) {
+      return teishi.v (['widget', widget, 'valid widget', {test: teishi.test.equal}]);
+   }
+
+   function example21Capture (widget, sprocket) {
+      return teishi.v ([
+         validateWidget21 (widget),
+         ['sprocket', sprocket, 'object']
+      ]);
+   }
+
+   tester (example21Capture, {
+      invalid1: ['almost a valid widget', 'definitely not a sprocket'],
+      invalid2: ['valid widget', 'definitely not a sprocket'],
+      valid1: ['valid widget', {}],
+      valid2: ['valid widget', {hi: 'handsome'}],
+   });
+
+   function example21 (widget, sprocket) {
+      return teishi.v ([
+         validateWidget21 (widget),
+         function () {return ['sprocket', sprocket, 'object']}
+      ]);
+   }
+
+   tester (example21, {
+      invalid1: ['almost a valid widget', 'definitely not a sprocket'],
+      invalid2: ['valid widget', 'definitely not a sprocket'],
+      valid1: ['valid widget', {}],
+      valid2: ['valid widget', {hi: 'handsome'}],
+   });
+
+   function validateTeishiRule (rule) {
+      var metarule = [
+         ['teishi rule', rule, ['function', 'boolean', 'array'], {multi: 'oneOf'}],
+         [teishi.t (rule) === 'array', [
+            function () {
+               return [(teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string')), [
+                  ['teishi simple rule', rule, 'array'],
+                  ['length of teishi simple rule', rule.length, [3, 4], {multi: 'oneOf', test: teishi.test.equal}],
+                  ['rule name', rule [0], ['string', 'array'], {multi: 'oneOf'}],
+                  [teishi.t (rule [0]) === 'array', [
+                     function () {return ['rule name', rule [0].length, 2, {test: teishi.test.equal}]},
+                     ['rule name', rule [0], 'string', {multi: 'each'}],
+                  ]],
+                  ['rule options', rule [3], ['object', 'undefined'], {multi: 'oneOf'}],
+                  [teishi.t (rule [3]) === 'object', [
+                     function () {
+                        ['keys of rule options', dale.keys (rule [3]), ['multi', 'test'], {multi: 'eachOf', test: teishi.test.equal}],
+                        ['options.multi', rule [3].multi, [undefined, 'each', 'oneOf', 'eachOf'], {multi: 'oneOf', test: teishi.test.equal}],
+                        ['options.test', rule [3].test, ['undefined', 'function'], {multi: 'oneOf'}]
+                     }
+                  ]]
+               ]]
+            }
+         ]]
+      ];
+
+      if (teishi.v (metarule)) {
+         if (teishi.t (rule) === 'array' && ! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) {
+            // If the rule is an array and it is not a simple rule, we assume it is a nested rule!
+            return dale.stopOn (rule, false, function (v) {
+               return validateTeishiRule (v);
+            });
+         }
+         else return true;
+      }
+      else return false;
+   }
+
+   tester (validateTeishiRule, {
+      invalid1: /a/,
+      invalid2: [1, 2, 3, 4],
+      valid1: ['array', null, 'array'],
+   });
+
+   function validateWidget (widget) {
+      return teishi.v (['widget', widget, 'object']);
+   }
+
+   tester (validateWidget, {
+      invalid1: 'aaa',
+      invalid2: /aaa/,
+      valid: {a: 'aa'}
+   });
+
+   function validateWidget2 (widget) {
+      return teishi.v ('validateWidget', ['widget', widget, 'object']);
+   }
+
+   tester (validateWidget2, {
+      invalid1: 'aaa',
+      invalid2: /aaa/,
+      valid: {a: 'aa'}
+   });
+
+}) ();
