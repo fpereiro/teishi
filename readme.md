@@ -170,7 +170,9 @@ The most basic teishi rules have this form: `[name, compare, to]`.
 
 Take this rule from `example1` above:
 
-`['counter', counter, 'integer']`.
+```javascript
+['counter', counter, 'integer']
+```
 
 This rule enforces that `counter` will be of type `integer`. If this rule is not fulfulled, teishi will return the following error message: `counter should have as type "integer" but instead has value VALUE and type TYPE.` (with VALUE and TYPE being the value and the type of `counter`, respectively).
 
@@ -185,7 +187,9 @@ Things to notice here:
 
 Let's take a slightly more complex rule, also from `example1`:
 
-`['callback', callback, ['function', 'undefined'], {multi: 'oneOf'}]`
+```javascript
+['callback', callback, ['function', 'undefined'], {multi: 'oneOf'}]
+```
 
 This rule enforces that `callback` will be either of type `function` or `undefined`.
 
@@ -207,7 +211,9 @@ Notice that so far, we've only checked the *type* of `compare`. Let's see how we
 
 Let's take this rule from `example2` above:
 
-`['action', action, ['create', 'read', 'update', 'delete'], {multi: 'oneOf', test: teishi.test.equal}]`
+```javascript
+['action', action, ['create', 'read', 'update', 'delete'], {multi: 'oneOf', test: teishi.test.equal}]
+```
 
 In this rule, we state that `action` should be either `'create'`, `'read'`, `'update'` or `'delete'`.
 
@@ -251,11 +257,13 @@ In javascript, when you compare complex objects (arrays and objects), the langua
 
 What this means is that if you compare (for example) two arrays with the same values, you will get a `false` value.
 
-`[1, 2, 3] === [1, 2, 3] // returns false`
+```javascript
+[1, 2, 3] === [1, 2, 3] // returns false
+```
 
 Whereas if you do:
 
-```
+```javascript
 var array = [1, 2, 3];
 array === array // returns true
 ```
@@ -264,7 +272,9 @@ In practice, most often you will want to compare whether the values of two array
 
 As a result, `teishi.test.equal` will compare the values of two objects or arrays and will return `true` if their values are equal (and `false` if they are not). This kind of comparison is often named *deep equality*.
 
-`['input', [1, 2, 3], [1, 2, 3], {test: teishi.test.equal}] // this will return true`
+```javascript
+['input', [1, 2, 3], [1, 2, 3], {test: teishi.test.equal}] // this will return true
+```
 
 Historical note: in a previous version of teishi, `teishi.test.equal` was the default test function, until after dutifully writing `test: teishi.test.type` in my teishi rules a few hundred times I realized that type checking was 5-10 times more prevalent than equality checks.
 
@@ -278,7 +288,9 @@ Historical note: in a previous version of teishi, `teishi.test.equal` was the de
 
 We've already used this function in `example2` above:
 
-`[['limit', 'page size'], limit, {min: 0, max: 100}, {test: teishi.test.range}]`
+```javascript
+[['limit', 'page size'], limit, {min: 0, max: 100}, {test: teishi.test.range}]
+```
 
 Here, we ensure that `limit` can be 0, 100 or any number in between.
 
@@ -286,7 +298,9 @@ Here, we ensure that `limit` can be 0, 100 or any number in between.
 
 If we want `limit` to be between 0 and 100, but we don't want it to be 0 or 100, we write:
 
-`[['limit', 'page size'], limit, {more: 0, less: 100}, {test: teishi.test.range}]`
+```javascript
+[['limit', 'page size'], limit, {more: 0, less: 100}, {test: teishi.test.range}]
+```
 
 `more` and `less` don't allow the `compare` value to be equal to them. In mathematical terms, they determine an *open* line segment.
 
@@ -294,7 +308,9 @@ If you are using `teishi.test.range`, a valid `to` value is an object with one o
 
 Notice that you can mix *open* and *closed* operators. For example:
 
-`[['limit', 'page size'], limit, {min: 0, less: 100}, {test: teishi.test.range}]`
+```javascript
+[['limit', 'page size'], limit, {min: 0, less: 100}, {test: teishi.test.range}]
+```
 
 This rule will allow `limit` to be 0 but it won't allow it to be 100.
 
@@ -304,7 +320,9 @@ This rule will allow `limit` to be 0 but it won't allow it to be 100.
 
 For example, imagine we want a certain `identifier` to be a string of at least one character composed only of letters and numbers. We can determine this by using the following rule:
 
-`[['identifier', 'alphanumeric string'], identifier, /^[0-9a-zA-Z]+$/, {test: teishi.test.match}]`
+```javascript
+[['identifier', 'alphanumeric string'], identifier, /^[0-9a-zA-Z]+$/, {test: teishi.test.match}]
+```
 
 If `compare` is not a string and `to` is not a regex, a proper error message will be displayed.
 
@@ -316,7 +334,9 @@ Although the five functions above will take you surprisingly far, you may need t
 
 Notice this rule, which we've already seen before:
 
-`[['limit', 'page size'], limit, {min: 0, max: 100}, {test: teishi.test.range}]`
+```javascript
+[['limit', 'page size'], limit, {min: 0, max: 100}, {test: teishi.test.range}]
+```
 
 Here, `name` (the first element of the rule) is not a string, but rather an array with two strings. The purpose of the second string is to provide a verbal description of the `to` field.
 
@@ -342,45 +362,69 @@ Let's first state a few definitions:
 
 If you use an object instead of an array and `multi` goes through each of its elements, teishi will *ignore the keys* of the object and *only take into account its values*. For example, these two rules are equivalent:
 
-`['length of input', input.length, [1, 2, 3], {multi: 'oneOf', test: teishi.test.equal}]`
+```javascript
+['length of input', input.length, [1, 2, 3], {multi: 'oneOf', test: teishi.test.equal}]
+```
 
-`['length of input', input.length, {cant: 1, touch: 2, this: 3}, {multi: 'oneOf', test: teishi.test.equal}]`
+```javascript
+['length of input', input.length, {cant: 1, touch: 2, this: 3}, {multi: 'oneOf', test: teishi.test.equal}]
+```
 
 **What happens if `compare` is a `simple value` and you set `multi` to `'each'` or `'eachOf'`?**
 
 If `multi` is set to `'each'` or `'eachOf'`, this is the same as setting `compare` to an array with a single element. For example, these two rules will be the same.
 
-`['input', 1, 'integer', {multi: 'each'}]`
+```javascript
+['input', 1, 'integer', {multi: 'each'}]
+```
 
-`['input', [1], 'integer', {multi: 'each'}]`
+```javascript
+['input', [1], 'integer', {multi: 'each'}]
+```
 
 **What happens if `to` is a `simple value` and you set `multi` to `'oneOf'` or `'eachOf'`?**
 
 Same than above, `to` will be treated as an array with one element. For example, these two rules are equivalent:
 
-`['input', input, 'integer', {multi: 'oneOf'}]`
+```javascript
+['input', input, 'integer', {multi: 'oneOf'}]
+```
 
-`['input', input, ['integer'], {multi: 'oneOf'}]`
+```javascript
+['input', input, ['integer'], {multi: 'oneOf'}]
+```
 
 **What happens if `compare` is an `empty value` and you set `multi` to `'each'` or `'eachOf'`?**
 
 If `compare` is empty and `multi` is either `'each'` or `'eachOf'`, teishi assumes that there are no values to compare, so there cannot be possibly a source of error. Hence, it will always return `true`. Here are examples of rules that will always return `true`:
 
-`['input', undefined, 'integer', {multi: 'each'}]`
+```javascript
+['input', undefined, 'integer', {multi: 'each'}]
+```
 
-`['input', [], 'integer', {multi: 'each'}]`
+```javascript
+['input', [], 'integer', {multi: 'each'}]
+```
 
-`['input', {}, 'integer', {multi: 'each'}]`
+```javascript
+['input', {}, 'integer', {multi: 'each'}]
+```
 
 **What happens if `to` is an `empty value` and you set `multi` to `'oneOf'` or `'eachOf'`?**
 
 If `to` is empty and `multi` is either `'oneOf'` or `'eachOf'`, teishi assumes that there are no values that `compare` can match, so there cannot be any possible way to pass the test. Hence, it will always return `false`, plus an error message. Here are examples of rules that will always return `false`:
 
-`['input', input, undefined, {multi: 'oneOf'}]`
+```javascript
+['input', input, undefined, {multi: 'oneOf'}]
+```
 
-`['input', input, [], {multi: 'oneOf'}]`
+```javascript
+['input', input, [], {multi: 'oneOf'}]
+```
 
-`['input', input, {}, {multi: 'oneOf'}]`
+```javascript
+['input', input, {}, {multi: 'oneOf'}]
+```
 
 ### Summary: teishi simple rules expressed as teishi rules
 
@@ -388,39 +432,57 @@ To sum up what a teishi simple rule is, let's express it in terms of teishi simp
 
 A teishi simple rule is an array.
 
-`['teishi simple rule', rule, 'array']`
+```javascript
+['teishi simple rule', rule, 'array']
+```
 
 The rule can have three or four elements.
 
-`['length of teishi simple rule', input.length, [3, 4], {multi: 'oneOf', test: teishi.test.equal}]`
+```javascript
+['length of teishi simple rule', input.length, [3, 4], {multi: 'oneOf', test: teishi.test.equal}]
+```
 
 The `names` of the rule must be either a string or an array.
 
-`['rule name', rule [0], ['string', 'array'], {multi: 'oneOf'}]`
+```javascript
+['rule name', rule [0], ['string', 'array'], {multi: 'oneOf'}]
+```
 
 If `names` is an array, it must have length 2 and only contain strings.
 
-`['rule name', rule [0].length, 2, {test: teishi.test.equal}]`
+```javascript
+['rule name', rule [0].length, 2, {test: teishi.test.equal}]
+```
 
-`['rule name', rule [0], 'string', {multi: 'each'}]`
+```javascript
+['rule name', rule [0], 'string', {multi: 'each'}]
+```
 
 `compare` and `to` can be *anything*, so we don't have to write any validation rules for them!
 
 The `options` object must be an object or `undefined`.
 
-`['rule options', rule [3], ['object', 'undefined'], {multi: 'oneOf'}]`
+```javascript
+['rule options', rule [3], ['object', 'undefined'], {multi: 'oneOf'}]
+```
 
 If the `options` object is defined, its keys must be `'multi'` or `'test'`. We will retrieve the keys of the object using [dale.keys](http://www.github.com/fpereiro/dale#dalekeys).
 
-`['keys of rule options', dale.keys (rule [3]), ['multi', 'test'], {multi: 'eachOf', test: teishi.test.equal}]`
+```javascript
+['keys of rule options', dale.keys (rule [3]), ['multi', 'test'], {multi: 'eachOf', test: teishi.test.equal}]
+```
 
 `options.multi` must be one of: `undefined`, `'each'`, `'oneOf'` and `'eachOf'`.
 
-`['options.multi', rule [3].multi, [undefined, 'each', 'oneOf', 'eachOf'], {multi: 'oneOf', test: teishi.test.equal}]`
+```javascript
+['options.multi', rule [3].multi, [undefined, 'each', 'oneOf', 'eachOf'], {multi: 'oneOf', test: teishi.test.equal}]
+```
 
 `options.test` must be either `undefined` or a function.
 
-`['options.test', rule [3].test, ['undefined', 'function'], {multi: 'oneOf'}]`
+```javascript
+['options.test', rule [3].test, ['undefined', 'function'], {multi: 'oneOf'}]
+```
 
 Notice that in the last rule, we surrounded `undefined` with quotes, because the type function returns the string `'undefined'`, not `undefined` itself.
 
@@ -432,11 +494,17 @@ There are four kinds of complex rules in teishi. Let's take a look at them.
 
 A nested teishi rule is an array containing teishi rules. If `a`, `b` and `c` are teishi rules, all of these are valid teishi rules:
 
-`[a, b, c]`
+```javascript
+[a, b, c]
+```
 
-`[[a, b, c]]`
+```javascript
+[[a, b, c]]
+```
 
-`[[a], b, c]`
+```javascript
+[[a], b, c]
+```
 
 `(any other concoction of arrays and a, b, c that you can imagine)`
 
@@ -452,7 +520,7 @@ For example, imagine you have a function `validateWidget` that returns `true` if
 
 If you want to validate a `widget` as part of the validations on a certain function, you can write the following:
 
-```
+```javascript
 function validateSomething (widget, ...) {
    if (teishi.stop ([
       // a rule here...
@@ -468,9 +536,13 @@ When `validateSomething` is invoked, `validateWidget (widget)` will be evaluated
 
 Imagine that you want to validate a certain `array`. You want `array` to be an array, and you want it to have a length of 3. So you write the following rules:
 
-`['array', array, 'array']`
+```javascript
+['array', array, 'array']
+```
 
-`['array length', array.length, 3, {test: teishi.test.equal}]`
+```javascript
+['array length', array.length, 3, {test: teishi.test.equal}]
+```
 
 However, if `array` is not an array, instead of getting a nice teishi error, you will get an exception! For example, if `array` is `null`, you will get an exception that says something like: `TypeError: Cannot read property 'length' of null`.
 
@@ -480,9 +552,11 @@ To prevent this, we want javascript to evaluate the elements of a rule only when
 
 When teishi finds a function, it executes it and then considers the result as a rule. So, we can express these two rules as follows:
 
-`['array', array, 'array']`
-
+```javascript
+['array', array, 'array']
 ```
+
+```javascript
 function () {
    return ['array length', array.length, 3, {test: teishi.test.equal}]
 }
@@ -504,7 +578,7 @@ On the flip side, you will quickly learn where to write them and also quickly yo
 
 Conditional rules allow you to enforce certain teishi rules only when a condition is met. Let's see an example:
 
-```
+```javascript
 [teishi.t (input) === 'array', [
    function () {
       return ['input.length', input.length, 3, {test: teishi.test.equal}]
@@ -521,7 +595,7 @@ In the example above, if `input` is an array, teishi will execute the two rules 
 
 Let's see another example:
 
-```
+```javascript
 [
    options.port !== undefined,
    ['options.port', options.port, {min: 1, max: 65536}, {test: teishi.test.range}]
@@ -540,7 +614,7 @@ When you use boolean rules (because you are using another validation function as
 
 Let's see an example of conditional capture:
 
-```
+```javascript
 [
    validateWidget (widget),
    ['sprocket', sprocket, 'object']
@@ -555,7 +629,7 @@ To avoid conditional capture, you need to bear in mind the following rule:
 
 *When writing a nested rule of length 2 where the first rule is a boolean*, **wrap the second rule in a function guard**.
 
-```
+```javascript
 [
    validateWidget (widget),
    function () {return ['sprocket', sprocket, 'object']}
@@ -570,7 +644,7 @@ This hack has the added benefit of further dignifying the other hack (function g
 
 Now that we know complex rules, we can write a teishi rule that validates teishi rules!
 
-```
+```javascript
 [
    ['teishi rule', rule, ['function', 'boolean', 'array'], {multi: 'oneOf'}],
    [teishi.t (rule) === 'array', [
@@ -620,7 +694,7 @@ I wish I could use this code in teishi proper, but we can't because we need to w
 
 The canonical usage example of `teishi.v` is to create validation functions. For example:
 
-```
+```javascript
 function validateWidget (widget) {
    return teishi.v (['widget', widget, 'object']);
 }
@@ -630,7 +704,7 @@ The function above will return `true` if `widget` is an object, and `false` othe
 
 The purpose of `functionName` is to provide the name of the calling function to the error messages, to locate errors more easily. For example:
 
-```
+```javascript
 function validateWidget (widget) {
    return teishi.v ('validateWidget', ['widget', widget, 'object']);
 }
@@ -738,7 +812,9 @@ Why use `teishi.l` instead of `console.log`?
 
 `message` will printed as is, with one important exception: if you pass it an array, `teishi.l` will print it as a string separated by spaces. For example:
 
-`['I', 'am', 'a', 'string']`
+```javascript
+['I', 'am', 'a', 'string']
+```
 
 will print:
 
@@ -746,7 +822,9 @@ will print:
 
 However, if there are arrays within that array, they will be printed with array notation:
 
-`[['I', 'am', 'an', 'array']]`
+```javascript
+[['I', 'am', 'an', 'array']]
+```
 
 will print:
 
@@ -793,7 +871,7 @@ Earlier I said that `fun` can return either `true` or `false`, depending on the 
 
 To illustrate this, let's take at look at the slightly more intimidating `teishi.test.match`:
 
-```
+```javascript
 teishi.test.match = teishi.makeTest (function (a, b) {
    if (teishi.t (a) !== 'string') {
       return ['Invalid comparison string passed to teishi.test.match. Comparison string must be of type string but instead is', a, 'with type', teishi.t (a)];
@@ -817,7 +895,7 @@ The complete source code is contained in `teishi.js`. It is about 370 lines long
 
 Below is the annotated source.
 
-```
+```javascript
 /*
 teishi - v2.0.0
 
@@ -1182,7 +1260,7 @@ This function takes four to six arguments:
 - `compare`, the compared value.
 - `to`, the reference value.
 - `eachValue`, which is the original `compare` value in a rule that has `multi` set to `'each'` or `'eachOf'`.
-- `eachValue`, which is the original `to` value in a rule that has `multi` set to `'oneOf'` or `'eachOf'`.
+- `ofValue`, which is the original `to` value in a rule that has `multi` set to `'oneOf'` or `'eachOf'`.
 
 ```javascript
       return function (functionName, names, compare, to, eachValue, ofValue) {
