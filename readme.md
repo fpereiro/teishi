@@ -761,7 +761,7 @@ If you call `teishi.stop` with `mute` set to `true` and a validation error is fo
 
 ## Helper functions
 
-teishi relies on five helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
+teishi relies on seven helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
 
 ### teishi.t
 
@@ -789,6 +789,12 @@ In keeping with the principle of exception-less code, teishi provides two wrappe
 - `teishi.p`, which wraps `JSON.parse`.
 
 If they receive invalid input, these two functions will return `false` instead of throwing an exception. If the input is valid, they will return the output of `JSON.stringify` and `JSON.parse`, respectively.
+
+### teishi.simple and teishi.complex
+
+`teishi.simple` takes an `input` and returns `true` if it's a simple object (anything but an array or an object).
+
+`teishi.complex` takes an `input` and returns `true` if it's a complex object (array or object).
 
 ### teishi.c
 
@@ -932,7 +938,7 @@ This is the most succinct form I found to export an object containing all the pu
    else        var teishi = window.teishi = {};
 ```
 
-### Five helper functions
+### Helper functions
 
 We start by defining `teishi.t`, by far the most useful function of the bunch. This function is inspired on [Douglas Crockford's remedial type function](http://javascript.crockford.com/remedial.html).
 
@@ -975,6 +981,18 @@ The purpose of `teishi.t` is to create an improved version of `typeof`. The impr
    }
 ```
 
+`teishi.simple` and `teishi.complex` return `false`/`true` (respectively) if their `input` is a complex value (array or object) and `true`/`false` otherwise.
+
+```javascript
+   teishi.simple = function (input) {
+      return teishi.t (input) !== 'array' && teishi.t (input) !== 'object';
+   }
+
+   teishi.complex = function (input) {
+      return teishi.t (input) === 'array' || teishi.t (input) === 'object';
+   }
+```
+
 `teishi.c` does two things: 1) copy an input; 2) eliminate any circular references within the copied input.
 
 The "public" interface of the function (if we allow that distinction) takes a single argument, the `input` we want to copy. However, we define a second "private" argument (`seen`) that the function will use to pass information to recursive calls.
@@ -985,31 +1003,32 @@ This function is recursive. On recursive calls, `input` won't represent the `inp
    teishi.c = function (input, seen) {
 ```
 
-We determine the type of `input`. If it's not an array or object, there's nothing else to do, so we return the `input` itself.
+If `input` is not an array or object, we just return the `input` itself.
 
 ```javascript
-      var type = teishi.t (input);
-      if (type !== 'array' && type !== 'object') return input;
+      if (teishi.simple (input)) return input;
 ```
 
-If we are on an initial (non-recursive) call to `teishi.c`, we will initialize `seen` to an empty array. `seen` is an array where we'll place references to every array or object that `teishi.c` has already "seen" in `input`.
+`seen` is where we store the information needed to detect circular references. For any given `input`, `seen` will contain a reference to all arrays and objects that *contain* the current input. For example, if you have an array `a` (the outermost element) which contains an object `b`, and that object `b` contains an array `c`, these will be the values of `seen`:
+
+`When processing a: []`
+
+`When processing b: [a]`
+
+`When processing c: [a, b]`
+
+Now imagine that `c` contains a reference to `a`: this would be a circular reference, because `a` contains `c` and `c` contains `a`. What we want to do here is replace the reference to `a` within `c` to a string, to eliminate the reference.
+
+On the initial (non-recursive) call to the function, `seen` will be `undefined`. Because of how [`dale.do` works](http://github.com/fpereiro/dale#daledo), if `seen` is `undefined`, it will be initialized to an empty array.
+
+If `seen` is already an array, it will be replaced by a new array with the same elements. We do this to create a *local copy* of `seen` that will only be used by the instance of the function being executed (and no other parallel recursive calls).
+
+Why do we copy `seen`? Interestingly enough, for the same reason that we write this function: arrays and objects in javascript are passed by reference. If many simultaneous recursive calls received `seen`, the modifications they will do to it will be visible to other parallel recursive calls, and we want to avoid precisely this.
+
+The detection of circular references in `teishi.c` is best thought of as a path in a graph, from container object to contained one. For any point in the graph, we want to have the list of all containing nodes, and verify that none of them will be repeated. Any other path through the graph is what I tried to convey by *parallel recursive function call*.
 
 ```javascript
-      if (seen === undefined) seen = [];
-```
-
-The function will iterate through the elements in `seen` and check whether the current `input` was already "seen". If this is the case, we return the string `'[Circular Reference]'`.
-
-```javascript
-      if (dale.stopOn (seen, true, function (v) {
-         return input === v;
-      })) return '[Circular Reference]';
-```
-
-We push the `input` to `seen`.
-
-```javascript
-      seen.push (input);
+      seen = dale.do (seen, function (v) {return v});
 ```
 
 We initialize the `output` variable to either an empty array or object, depending on the type of input.
@@ -1018,19 +1037,63 @@ We initialize the `output` variable to either an empty array or object, dependin
       var output = type === 'array' ? [] : {};
 ```
 
-We iterate through the elements of `input`. For each of them, we set the corresponding `key` and `value` in output.
+We iterate through the elements of `input`.
 
-Instead of just placing each element of `input` of `output`, we do a recursive call to `teishi.c` itself (passing each element, plus the `seen` array).
+
+```javascript
+      dale.do (input, function (v, k) {
+```
+
+For the purposes of detecting and eliminating circular references, we first consider arrays and objects first.
+
+```javascript
+         if (teishi.complex (v)) {
+```
+
+We loop through the elements of `seen` and check if `v` (an array/object contained within `input`) is in the list of arrays/objects that *contain* `input`. If that's the case, the iteration will return `true`, stop the process and activate the conditional below.
+
+```javascript
+            if (dale.stopOn (seen, true, function (v2) {return v === v2})) {
+```
+
+If we are here, we have detected a circular reference. `v` shouldn't be contained in `input`, since it contains either `input` or another element that contains `input`.
+
+We will replace `v` by a string indicating a circular reference.
+
+You may ask: wouldn't doing this destroy the original `v`, which also *contains* `input`? I've asked myself that question, too. But it turns out that javascript passes arrays and objects by reference *as long as you don't replace them by a new object*. For example:
+
+```var a = [];```
+
+```var b = a;```
+
+```a.push (1); // b will now be [1]```
+
+```b = []; // a will still be [1]```
+
+Ok, back to the code. We eliminate the reference to `v` within `input`.
+
+```javascript
+               v = '[Circular Reference]';
+            }
+```
+
+If `v` is a complex object but it is not a circular reference, we push `v` into `seen`.
+
+```javascript
+            else seen.push (v);
+         }
+```
+
+For every element (simple and complex) inside `input`, we make a recursive call to `teishi.c`, passing `v` and `seen`. We set the result of this to the corresponding element in `output`.
 
 If the element in question is a simple value, it will be returned. If it is a complex value, `teishi.c` will return us a copy of that complex value, stripped of circular references.
 
 ```javascript
-      dale.do (input, function (v, k) {
          output [k] = teishi.c (v, seen);
       });
 ```
 
-We return the output.
+We return the output. There's nothing else to do, so we close the function.
 
 ```javascript
       return output;
@@ -1351,13 +1414,7 @@ Notice that all of these functions:
       equal:    teishi.makeTest (function (a, b) {
 ```
 
-We define a local function `simple` that returns `true` if its `input` is not an array or object (hence, a *simple* value) and `false` otherwise.
-
-```javascript
-         function simple (i) {return teishi.t (i) !== 'array' && teishi.t (i) !== 'object'}
-```
-
-We define a function called `inner`. We name it because the function is recursive, so it needs a name to call itself. And we also wrap the function in parenthesis to execute it immediately. `inner` receives two arguments.
+We define a function called `inner`. We name it because the function is recursive, so it needs a name to call itself. And we also wrap the function in parenthesis to execute it immediately. `inner` receives two arguments, which are the two objects we're comparing.
 
 ```javascript
          return (function inner (a, b) {
@@ -1366,7 +1423,7 @@ We define a function called `inner`. We name it because the function is recursiv
 If `a` and `b` are simple, we compare them with `===` and return the result.
 
 ```javascript
-            if (simple (a) && simple (b))      return a === b;
+            if (teishi.simple (a) && teishi.simple (b))      return a === b;
 ```
 
 If we are here, at least one of the arguments is complex. If their type is different, we return `false`, since they can't be equal.
@@ -1403,9 +1460,8 @@ Although defining `simple` and `inner` outside of the test functions would elimi
 
 ```javascript
       notEqual: teishi.makeTest (function (a, b) {
-         function simple (i) {return teishi.t (i) !== 'array' && teishi.t (i) !== 'object'}
          return ! (function inner (a, b) {
-            if (simple (a) && simple (b))      return a === b;
+            if (teishi.simple (a) && teishi.simple (b)) return a === b;
             if (teishi.t (a) !== teishi.t (b)) return false;
             return dale.stopOn (a, false, function (v, k) {
                return inner (v, b [k]);
@@ -1421,7 +1477,11 @@ Although defining `simple` and `inner` outside of the test functions would elimi
          if (teishi.t (b) !== 'object') {
             return ['Range options object must be an object but instead is', b, 'with type', teishi.t (b)];
          }
-         // If there are no conditions, we return true.
+```
+
+If there are no conditions, we return `true`.
+
+```javascript
          if (teishi.s (b) === '{}') return true;
 ```
 

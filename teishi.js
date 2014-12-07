@@ -1,5 +1,5 @@
 /*
-teishi - v2.0.0
+teishi - v2.1.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -17,7 +17,7 @@ Please refer to readme.md to read the annotated source.
    if (isNode) var teishi = exports;
    else        var teishi = window.teishi = {};
 
-   // *** FIVE HELPER FUNCTIONS ***
+   // *** HELPER FUNCTIONS ***
 
    teishi.t = function (value) {
       var type = typeof value;
@@ -45,21 +45,30 @@ Please refer to readme.md to read the annotated source.
       catch (error) {return false}
    }
 
+   teishi.simple = function (input) {
+      return teishi.t (input) !== 'array' && teishi.t (input) !== 'object';
+   }
+
+   teishi.complex = function (input) {
+      return teishi.t (input) === 'array' || teishi.t (input) === 'object';
+   }
+
    teishi.c = function (input, seen) {
-      var type = teishi.t (input);
-      if (type !== 'array' && type !== 'object') return input;
 
-      if (seen === undefined) seen = [];
+      if (teishi.simple (input)) return input;
 
-      if (dale.stopOn (seen, true, function (v) {
-         return input === v;
-      })) return '[Circular Reference]';
+      seen = dale.do (seen, function (v) {return v});
 
-      seen.push (input);
-
-      var output = type === 'array' ? [] : {};
+      var output = teishi.t (input) === 'array' ? [] : {};
 
       dale.do (input, function (v, k) {
+
+         if (teishi.complex (v)) {
+            if (dale.stopOn (seen, true, function (v2) {return v === v2})) {
+               v = '[Circular Reference]';
+            }
+            else seen.push (v);
+         }
          output [k] = teishi.c (v, seen);
       });
 
@@ -171,9 +180,8 @@ Please refer to readme.md to read the annotated source.
       ),
 
       equal:    teishi.makeTest (function (a, b) {
-         function simple (i) {return teishi.t (i) !== 'array' && teishi.t (i) !== 'object'}
          return (function inner (a, b) {
-            if (simple (a) && simple (b))      return a === b;
+            if (teishi.simple (a) && teishi.simple (b)) return a === b;
             if (teishi.t (a) !== teishi.t (b)) return false;
             return dale.stopOn (a, false, function (v, k) {
                return inner (v, b [k]);
@@ -182,9 +190,8 @@ Please refer to readme.md to read the annotated source.
       }, 'should be equal to'),
 
       notEqual: teishi.makeTest (function (a, b) {
-         function simple (i) {return teishi.t (i) !== 'array' && teishi.t (i) !== 'object'}
          return ! (function inner (a, b) {
-            if (simple (a) && simple (b))      return a === b;
+            if (teishi.simple (a) && teishi.simple (b)) return a === b;
             if (teishi.t (a) !== teishi.t (b)) return false;
             return dale.stopOn (a, false, function (v, k) {
                return inner (v, b [k]);
@@ -196,7 +203,6 @@ Please refer to readme.md to read the annotated source.
          if (teishi.t (b) !== 'object') {
             return ['Range options object must be an object but instead is', b, 'with type', teishi.t (b)];
          }
-         // If there are no conditions, we return true.
          if (teishi.s (b) === '{}') return true;
          return dale.stopOnNot (b, true, function (v, k) {
             if (k !== 'min' && k !== 'max' && k !== 'less' && k !== 'more') {
