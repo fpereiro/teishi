@@ -757,7 +757,7 @@ if (! teishi.v ('myFunction', [
 
 Thanks to `teishi.stop`, we can get rid of the `=== false` or the `!` in the examples above. There is no way, however, to get rid of the conditional wrapping the call to `teishi.stop`, nor a way of omitting the `return false`. The above pattern is the most succint auto-activation code you can get from teishi.
 
-If you call `teishi.stop` with `mute` set to `true` and a validation error is found, it will not be reported to the console. I cannot think of why you would like to do that, but it's possible to do so.
+If you call `teishi.stop` with `mute` set to `true` and a validation error is found, it will not be reported to the console. This is useful for when you want to check the absence of a condition, but you don't consider this absence to be an error, just a result that will control the control flow of your program.
 
 ## Helper functions
 
