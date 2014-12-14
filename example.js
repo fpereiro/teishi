@@ -1,5 +1,5 @@
 /*
-teishi - v2.1.1
+teishi - v2.1.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -16,10 +16,15 @@ Run the examples by either including the script in a webpage or by running `node
    function tester (fun, inputs) {
       var funame    = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$1');
       var arglength = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$2').split (',').length;
-      dale.do (inputs, function (v, k) {
-         teishi.l (funame + ':' + k, arglength < 2 ? fun.call (fun, v) : fun.apply (fun, v));
+      dale.stopOn (inputs, false, function (v, k) {
+         var result = arglength < 2 ? fun.call (fun, v) : fun.apply (fun, v);
+         var mismatch = (k.match (/^valid/) && result === false) || (k.match (/^invalid/) && result === true);
+         teishi.l (funame + ':' + k, result);
          console.log ('');
-
+         if (mismatch) {
+            teishi.l ('Mismatch!', 'Aborting test now');
+            process.exit (1);
+         }
       });
    }
 
@@ -357,7 +362,7 @@ Run the examples by either including the script in a webpage or by running `node
    }
 
    tester (example21Capture, {
-      invalid1: ['almost a valid widget', 'definitely not a sprocket'],
+      valid_should_be_invalid1: ['almost a valid widget', 'definitely not a sprocket'],
       invalid2: ['valid widget', 'definitely not a sprocket'],
       valid1: ['valid widget', {}],
       valid2: ['valid widget', {hi: 'handsome'}],
@@ -440,5 +445,7 @@ Run the examples by either including the script in a webpage or by running `node
       invalid2: /aaa/,
       valid: {a: 'aa'}
    });
+
+   teishi.l ('Finished', 'All tests runned successfully!');
 
 }) ();

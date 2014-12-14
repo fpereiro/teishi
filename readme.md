@@ -903,7 +903,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v2.1.1
+teishi - v2.1.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
