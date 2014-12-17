@@ -903,7 +903,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v2.1.2
+teishi - v2.1.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1414,7 +1414,7 @@ Notice that all of these functions:
       equal:    teishi.makeTest (function (a, b) {
 ```
 
-We define a function called `inner`. We name it because the function is recursive, so it needs a name to call itself. And we also wrap the function in parenthesis to execute it immediately. `inner` receives two arguments, which are the two objects we're comparing.
+We define a function called `inner`. We name it because the function is recursive, so it needs a name to call itself. Also, we wrap the function in parenthesis to execute it immediately. `inner` receives two arguments, which are the two objects we're comparing.
 
 ```javascript
          return (function inner (a, b) {
@@ -1690,7 +1690,7 @@ Since a `rule` can never be a string, and `functionName` always has to be a stri
 
 A subtle point: we set `functionName` to an empty string, instead of `undefined`. This is because, for recursive function calls, we want to have a fixed number of arguments, so as to simplify writing the recursive calls.
 
-``javascript
+```javascript
       var functionName = teishi.t (arguments [0]) === 'string' ? arguments [0] : '';
       var rule         = teishi.t (arguments [0]) === 'string' ? arguments [1] : arguments [0];
 ```

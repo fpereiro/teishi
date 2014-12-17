@@ -1,6 +1,6 @@
 {
    "name": "teishi",
-   "version": "2.1.2",
+   "version": "2.1.3",
    "description": "Tool for validating the input of functions.",
    "dependencies": {
       "dale": "2.1.2"
