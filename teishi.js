@@ -1,5 +1,5 @@
 /*
-teishi - v2.1.3
+teishi - v2.1.4
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -29,6 +29,7 @@ Please refer to readme.md to read the annotated source.
       }
       if (type === 'object') {
          if (value === null)                                               type = 'null';
+         if (Object.prototype.toString.call (value) === '[object Date]')   type = 'date';
          if (Object.prototype.toString.call (value) === '[object Array]')  type = 'array';
          if (Object.prototype.toString.call (value) === '[object RegExp]') type = 'regex';
       }
@@ -93,13 +94,17 @@ Please refer to readme.md to read the annotated source.
 
       if (message === undefined) message = [message];
 
-      var textArray = type === 'array' && !recursive;
+      var textArray = type === 'array' && ! recursive;
 
       var output = dale.do (message, function (v, k) {
 
-         if (teishi.t (v) === 'string' && !textArray) v = '"' + v + '"';
+         if (teishi.t (v) === 'string' && ! textArray) v = '"' + v + '"';
 
-         if (teishi.t (v) === 'array' || teishi.t (v) === 'object') v = teishi.l (label, v, lastColor, true);
+         if (teishi.t (v) === 'array' || teishi.t (v) === 'object') {
+            var result = teishi.l (label, v, lastColor, true);
+            v = result [0];
+            lastColor = result [1];
+         }
 
          if (type === 'object') v = (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ' + v;
 
@@ -107,6 +112,7 @@ Please refer to readme.md to read the annotated source.
             var color = lastColor;
             while (color === lastColor) color = ansi.color ();
             v = color + v;
+            lastColor = color;
          }
 
          return v;
@@ -115,10 +121,10 @@ Please refer to readme.md to read the annotated source.
 
       if (! isNode) ansi.white = ansi.end = ansi.bold = '';
 
-      if (type === 'array' && !textArray) output = ansi.white + '[' + output + ansi.white + ']';
-      if (type === 'object')              output = ansi.white + '{' + output + ansi.white + '}';
+      if (type === 'array' && ! textArray) output = ansi.white + '[' + output + ansi.white + ']';
+      if (type === 'object')               output = ansi.white + '{' + output + ansi.white + '}';
 
-      if (recursive) return output;
+      if (recursive) return [output, lastColor];
       console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + (isNode ? ansi.rcolor () : '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
    }
 

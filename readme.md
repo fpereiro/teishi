@@ -903,7 +903,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v2.1.3
+teishi - v2.1.4
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -944,10 +944,10 @@ We start by defining `teishi.t`, by far the most useful function of the bunch. T
 
 The purpose of `teishi.t` is to create an improved version of `typeof`. The improvements are two:
 
-- Distinguish between `object`, `array`, `regex` and `null` (all of which return `object` in `typeof`).
+- Distinguish between `object`, `array`, `regex`, `date` and `null` (all of which return `object` in `typeof`).
 - Distinguish between types of numbers: `nan`, `infinity`, `integer` and `float` (all of which return `number` in `typeof`).
 
-`type` takes a single argument (of any type, naturally) and returns a string which can be any of: `nan`, `infinity`, `integer`, `float`, `array`, `object`, `function`, `string`, `regex`, `null` and `undefined`.
+`type` takes a single argument (of any type, naturally) and returns a string which can be any of: `nan`, `infinity`, `integer`, `float`, `array`, `object`, `function`, `string`, `regex`, `date`, `null` and `undefined`.
 
 ```javascript
    teishi.t = function (value) {
@@ -960,6 +960,7 @@ The purpose of `teishi.t` is to create an improved version of `typeof`. The impr
       }
       if (type === 'object') {
          if (value === null)                                               type = 'null';
+         if (Object.prototype.toString.call (value) === '[object Date]')   type = 'date';
          if (Object.prototype.toString.call (value) === '[object Array]')  type = 'array';
          if (Object.prototype.toString.call (value) === '[object RegExp]') type = 'regex';
       }
@@ -1163,7 +1164,7 @@ Because of how [`dale.do` works](http://github.com/fpereiro/dale#daledo), if `me
 As we specified in the description of `teishi.l` above, if in its initial (non-recursive) call the `input` is an array, we treat it as a `textArray`. We define a flag to specify whether this is the case.
 
 ```javascript
-      var textArray = type === 'array' && !recursive;
+      var textArray = type === 'array' && ! recursive;
 ```
 
 We create a variable `output` that will be equal to the output of iterating `message` with `dale.do`. In the function below, `v` will represent each element of `input`.
@@ -1175,13 +1176,24 @@ We create a variable `output` that will be equal to the output of iterating `mes
 If the element is a string, we will wrap it in double quotes (`"`).
 
 ```javascript
-         if (teishi.t (v) === 'string' && !textArray) v = '"' + v + '"';
+         if (teishi.t (v) === 'string' && ! textArray) v = '"' + v + '"';
 ```
 
-If the element is an array or object, we will make a recursive call to `teishi.l` with the exact same arguments as the calling function, except for the `input` itself.
+If the element is an array or object, we will make a recursive call to `teishi.l` with the exact same arguments as the calling function, except for the `input` itself. We store the result of that recursive call in a local variable `result`.
 
 ```javascript
-         if (teishi.t (v) === 'array' || teishi.t (v) === 'object') v = teishi.l (label, v, lastColor, true);
+         if (teishi.t (v) === 'array' || teishi.t (v) === 'object') {
+            var result = teishi.l (label, v, lastColor, true);
+```
+
+`result`, which holds the output of `teishi.l`, is an array with two elements: 1) the actual string to be printed; and 2) the last color used in the string.
+
+We set `v` to `result [0]` and `lastColor` to `result [1]`.
+
+```javascript
+            v = result [0];
+            lastColor = result [1];
+         }
 ```
 
 If the element `v` is an object, we also want to print its key `k`, using the format `key: value`.
@@ -1227,6 +1239,12 @@ We place the color in the element.
 
 ```javascript
             v = lastColor + v;
+```
+
+We set `lastColor` to `color`.
+
+```javascript
+            lastColor = color;
          }
 ```
 
@@ -1251,14 +1269,14 @@ If we are in the browser, we overwrite the ANSI constants (not the functions) wi
 If `input` is an array or object, and if it is not a `textArray`, we surround `output` with square or curly brackets. We also take care of making these brackets white to make them contrast more clearly against the contents.
 
 ```javascript
-      if (type === 'array' && !textArray) output = ansi.white + '[' + output + ansi.white + ']';
-      if (type === 'object')              output = ansi.white + '{' + output + ansi.white + '}';
+      if (type === 'array' && ! textArray) output = ansi.white + '[' + output + ansi.white + ']';
+      if (type === 'object')               output = ansi.white + '{' + output + ansi.white + '}';
 ```
 
-If this is a recursive function call, we return `output`.
+If this is a recursive function call, we return an array with `output` as the first element and `lastColor` as the second. The reason for returning `lastColor` is that we want contiguous items to have different colors, even if they are within nested structures.
 
 ```javascript
-      if (recursive) return output;
+      if (recursive) return [output, lastColor];
 ```
 
 If it's not, we print the following:
