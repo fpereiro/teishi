@@ -897,13 +897,13 @@ For more information, please refer to the annotated source code below, where I d
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 370 lines long.
+The complete source code is contained in `teishi.js`. It is about 380 lines long.
 
 Below is the annotated source.
 
 ```javascript
 /*
-teishi - v2.1.4
+teishi - v2.1.5
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
