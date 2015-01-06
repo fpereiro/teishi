@@ -1,5 +1,5 @@
 /*
-teishi - v2.1.7
+teishi - v2.1.8
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -252,7 +252,7 @@ Please refer to readme.md to read the annotated source.
       if (! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
 
       if (rule.length < 3 || rule.length > 4) {
-         return ['Each teishi proper rule must be an array of length between 3 and 4, but instead is', rule, 'and has length', rule.length];
+         return ['Each teishi simple rule must be an array of length between 3 and 4, but instead is', rule, 'and has length', rule.length];
       }
 
       if (rule [3] !== undefined) {

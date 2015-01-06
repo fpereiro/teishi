@@ -234,6 +234,7 @@ teishi comes bundled with five test functions.
 - `'object'`
 - `'function'`
 - `'regex'`
+- `'date'`
 - `'null'`
 - `'undefined'`
 - `'string'`
@@ -244,7 +245,7 @@ teishi comes bundled with five test functions.
 
 Type detection is different to the native `typeof` operator in two ways:
 
-- We distinguish between `object`, `array`, `regex` and `null` (all of which return `object` using `typeof`).
+- We distinguish between `object`, `array`, `regex`, `date` and `null` (all of which return `object` using `typeof`).
 - We distinguish between types of numbers: `nan`, `infinity`, `integer` and `float` (all of which return `number` using `typeof`).
 
 Please remember **that you cannot use `'number'` as a type** since teishi requires more specificity. Instead use one of `'integer'`, `'float'`, `'nan'` or `'infinity'`.
@@ -772,6 +773,7 @@ The possible types are:
 - `'object'`
 - `'function'`
 - `'regex'`
+- `'date'`
 - `'null'`
 - `'undefined'`
 - `'string'`
@@ -813,7 +815,7 @@ Why use `teishi.l` instead of `console.log`?
 - You save three keystrokes every time you invoke this function.
 
 `teishi.l` takes two arguments:
-- `label`, a string that identifies where you placed the call to `teishi.l`. The label will be printed with a special background color that distinguishes from the `message`.
+- `label`, a string that identifies where you placed the call to `teishi.l`. The label will be printed with a special background color that distinguishes it from the `message`.
 - `message`, which can be anything.
 
 `message` will printed as is, with one important exception: if you pass it an array, `teishi.l` will print it as a string separated by spaces. For example:
@@ -893,6 +895,8 @@ As you can see, if `teishi.test.match` receives a `compare` field that is not a 
 
 When teishi invokes `fun`, it will treat both `false` and a custom error message as indication that the test failed. The only difference between `false` and an error message is that when `false` is returned, the standard error message will be printed, whereas if an error is returned, the error itself will be printed.
 
+The purpose of returning a custom error message (that will be printed) is because this kind of error implies a programming error on the way that the teishi rules were written. If, for example, `teishi.test.match` is invoked with a non-string argument, this is because your function didn't check the type of the input before. For this category of errors, the default error message would be misleading, so that's why we print custom errors.
+
 For more information, please refer to the annotated source code below, where I describe `teishi.makeTest` and all the test functions in detail.
 
 ## Source code
@@ -903,7 +907,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v2.1.7
+teishi - v2.1.8
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
