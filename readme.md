@@ -838,6 +838,8 @@ will print:
 
 `["I", "am", "an", "array"].`
 
+If you just pass a single argument to `teishi.l`, it will be treated as both `label` and `message`.
+
 ## Custom test functions
 
 What if the five test functions provided with teishi are not enough? Well, you can write your own custom test functions! Earlier I mentioned that this is an advanced topic. However, if you've made it through the readme, you are ready to do this.
@@ -907,7 +909,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v2.1.8
+teishi - v2.1.9
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1124,6 +1126,12 @@ We will now define `teishi.l` which is teishi's wrapper for console.log. The imp
 
 ```javascript
    teishi.l = function (label, message, lastColor, recursive) {
+```
+
+If `teishi.l` receives just one argument, it will be treated both as `label` and `message`.
+
+```javascript
+      if (arguments.length === 1) message = label;
 ```
 
 The magic of `teishi.l`'s colors is done through [ANSI escape codes](http://en.wikipedia.org/wiki/ANSI_escape_code). We will define a local object `ansi` which will contain three constants and two functions.

@@ -1,5 +1,5 @@
 /*
-teishi - v2.1.8
+teishi - v2.1.9
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -79,6 +79,8 @@ Please refer to readme.md to read the annotated source.
    var ms = new Date ().getTime ();
 
    teishi.l = function (label, message, lastColor, recursive) {
+
+      if (arguments.length === 1) message = label;
 
       var ansi = {
          bold: '\033[1m',
