@@ -762,7 +762,7 @@ If you call `teishi.stop` with `mute` set to `true` and a validation error is fo
 
 ## Helper functions
 
-teishi relies on seven helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
+teishi relies on eight helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
 
 ### teishi.t
 
@@ -803,6 +803,10 @@ If they receive invalid input, these two functions will return `false` instead o
 `teishi.c` (short for `teishi.copy`) takes a complex input (either an array or an object) and returns a copy. Also, if there are circular references in that input, it will replace them with the string `'[Circular Reference]'`.
 
 This function is useful when you want to pass an array or object to a function that will modify it *and* you want the array or object in question to remain modified outside of the scope of that function. [javascript passes objects and arrays by reference](http://stackoverflow.com/questions/13104494/does-javascript-pass-by-reference/13104500#13104500), so in this case you need to copy the array or object to avoid side effects.
+
+### teishi.time
+
+A very simple function that returns the current date in milliseconds.
 
 ### teishi.l
 
@@ -909,7 +913,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v2.1.9
+teishi - v2.1.10
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1107,10 +1111,16 @@ We return the output. There's nothing else to do, so we close the function.
    }
 ```
 
+We define `teishi.time`, which will return the current date in milliseconds.
+
+```javascript
+   teishi.time = function () {return new Date ().getTime ()}
+```
+
 We define `ms`, a local variable that holds the current date measured in milliseconds. This will be useful for `teishi.l`, which will be defined below.
 
 ```javascript
-   var ms = new Date ().getTime ();
+   var ms = teishi.time ();
 ```
 
 We will now define `teishi.l` which is teishi's wrapper for console.log. The improvements are:
@@ -1298,7 +1308,7 @@ If it's not, we print the following:
 - A period at the end.
 
 ```javascript
-      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + (isNode ? ansi.rcolor () : '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
+      console.log ('(' + (teishi.time () - ms) + 'ms) ' + (isNode ? ansi.rcolor () : '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
    }
 ```
 

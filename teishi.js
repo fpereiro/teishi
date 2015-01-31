@@ -1,5 +1,5 @@
 /*
-teishi - v2.1.9
+teishi - v2.1.10
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -76,7 +76,9 @@ Please refer to readme.md to read the annotated source.
       return output;
    }
 
-   var ms = new Date ().getTime ();
+   teishi.time = function () {return new Date ().getTime ()}
+
+   var ms = teishi.time ();
 
    teishi.l = function (label, message, lastColor, recursive) {
 
@@ -127,7 +129,7 @@ Please refer to readme.md to read the annotated source.
       if (type === 'object')               output = ansi.white + '{' + output + ansi.white + '}';
 
       if (recursive) return [output, lastColor];
-      console.log ('(' + (new Date ().getTime () - ms) + 'ms) ' + (isNode ? ansi.rcolor () : '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
+      console.log ('(' + (teishi.time () - ms) + 'ms) ' + (isNode ? ansi.rcolor () : '') + label + ':' + ansi.end + ansi.bold + ' ' + output + ansi.end + '.');
    }
 
    // *** TEST FUNCTIONS ***
