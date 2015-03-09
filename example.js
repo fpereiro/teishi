@@ -1,5 +1,5 @@
 /*
-teishi - v2.1.10
+teishi - v3.0.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -52,12 +52,12 @@ Run the examples by either including the script in a webpage or by running `node
 
    function myFunction (input) {
       if (teishi.stop ('myFunction', [
-         ['input', input, ['array', 'undefined'], {multi: 'oneOf'}],
+         ['input', input, ['array', 'undefined'], 'oneOf'],
          [teishi.t (input) === 'array', [
             function () {
-               return ['input.length', input.length, 3, {test: teishi.test.equal}]
+               return ['input.length', input.length, 3, teishi.test.equal]
             },
-            ['items of input', input, 'string', {multi: 'each'}]
+            ['items of input', input, 'string', 'each']
          ]]
       ])) return false;
 
@@ -78,7 +78,7 @@ Run the examples by either including the script in a webpage or by running `node
    function example1 (counter, callback) {
       if (teishi.stop ('example1', [
          ['counter', counter, 'integer'],
-         ['callback', callback, ['function', 'undefined'], {multi: 'oneOf'}]
+         ['callback', callback, ['function', 'undefined'], 'oneOf']
       ])) return false;
 
       return true;
@@ -93,9 +93,9 @@ Run the examples by either including the script in a webpage or by running `node
 
    function example2 (action, limit) {
       if (teishi.stop ('example2', [
-         ['action', action, ['create', 'read', 'update', 'delete'], {multi: 'oneOf', test: teishi.test.equal}],
+         ['action', action, ['create', 'read', 'update', 'delete'], 'oneOf', teishi.test.equal],
          ['limit', limit, 'integer'],
-         [['limit', 'page size'], limit, {min: 0, max: 100}, {test: teishi.test.range}]
+         [['limit', 'page size'], limit, {min: 0, max: 100}, teishi.test.range]
       ])) return false;
 
       return true;
@@ -111,11 +111,11 @@ Run the examples by either including the script in a webpage or by running `node
    function example3 (input) {
       if (teishi.stop ('example3', [
          ['input', input, 'object'],
-         ['keys of input', dale.keys (input), ['action', 'limit'], {multi: 'eachOf', test: teishi.test.equal}],
+         ['keys of input', dale.keys (input), ['action', 'limit'], 'eachOf', teishi.test.equal],
          function () {return [
-            ['input.action', input.action, ['create', 'read', 'update', 'delete'], {multi: 'oneOf', test: teishi.test.equal}],
+            ['input.action', input.action, ['create', 'read', 'update', 'delete'], 'oneOf', teishi.test.equal],
             ['input.limit', input.limit, 'integer'],
-            [['input.limit', 'page size'], input.limit, {min: 0, max: 100}, {test: teishi.test.range}]
+            [['input.limit', 'page size'], input.limit, {min: 0, max: 100}, teishi.test.range]
          ]}
       ])) return false;
 
@@ -139,7 +139,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example4 (input) {
-      return teishi.v (['input', input, [1, 2, 3], {test: teishi.test.equal}]);
+      return teishi.v (['input', input, [1, 2, 3], teishi.test.equal]);
    }
 
    tester (example4, {
@@ -148,7 +148,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example5 (input) {
-      return teishi.v (['input', input, [1, 2, 3], {test: teishi.test.notEqual}]);
+      return teishi.v (['input', input, [1, 2, 3], teishi.test.notEqual]);
    }
 
    tester (example5, {
@@ -157,7 +157,7 @@ Run the examples by either including the script in a webpage or by running `node
    })
 
    function example6 (limit) {
-      return teishi.v ([['limit', 'page size'], limit, {more: 0, less: 100}, {test: teishi.test.range}]);
+      return teishi.v ([['limit', 'page size'], limit, {more: 0, less: 100}, teishi.test.range]);
    }
 
    tester (example6, {
@@ -167,7 +167,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example7 (limit) {
-      return teishi.v ([['limit', 'page size'], limit, {min: 0, less: 100}, {test: teishi.test.range}]);
+      return teishi.v ([['limit', 'page size'], limit, {min: 0, less: 100}, teishi.test.range]);
    }
 
    tester (example7, {
@@ -177,7 +177,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example8 (identifier) {
-      return teishi.v ([['identifier', 'alphanumeric string'], identifier, /^[0-9a-zA-Z]+$/, {test: teishi.test.match}]);
+      return teishi.v ([['identifier', 'alphanumeric string'], identifier, /^[0-9a-zA-Z]+$/, teishi.test.match]);
    }
 
    tester (example8, {
@@ -187,7 +187,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example9 (input) {
-      return teishi.v (['length of input', input.length, [1, 2, 3], {multi: 'oneOf', test: teishi.test.equal}]);
+      return teishi.v (['length of input', input.length, [1, 2, 3], 'oneOf', teishi.test.equal]);
    }
 
    tester (example9, {
@@ -197,7 +197,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example10 (input) {
-      return teishi.v (['length of input', input.length, {cant: 1, touch: 2, this: 3}, {multi: 'oneOf', test: teishi.test.equal}]);
+      return teishi.v (['length of input', input.length, {cant: 1, touch: 2, this: 3}, 'oneOf', teishi.test.equal]);
    }
 
    tester (example10, {
@@ -207,7 +207,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example11 (input) {
-      return teishi.v (['input', input, 'integer', {multi: 'each'}]);
+      return teishi.v (['input', input, 'integer', 'each']);
    }
 
    tester (example11, {
@@ -219,7 +219,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example12 (input) {
-      return teishi.v (['input', input, 'integer', {multi: 'oneOf'}]);
+      return teishi.v (['input', input, 'integer', 'oneOf']);
    }
 
    tester (example12, {
@@ -228,7 +228,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example13 (input) {
-      return teishi.v (['input', input, ['integer'], {multi: 'oneOf'}]);
+      return teishi.v (['input', input, ['integer'], 'oneOf']);
    }
 
    tester (example13, {
@@ -237,7 +237,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example14 (input) {
-      return teishi.v (['input', input, 'integer', {multi: 'each'}]);
+      return teishi.v (['input', input, 'integer', 'each']);
    }
 
    tester (example14, {
@@ -249,15 +249,15 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function example15 (input) {
-      return teishi.v (['input', input, undefined, {multi: 'oneOf'}]);
+      return teishi.v (['input', input, undefined, 'oneOf']);
    }
 
    function example16 (input) {
-      return teishi.v (['input', input, [], {multi: 'oneOf'}]);
+      return teishi.v (['input', input, [], 'oneOf']);
    }
 
    function example17 (input) {
-      return teishi.v (['input', input, {}, {multi: 'oneOf'}]);
+      return teishi.v (['input', input, {}, 'oneOf']);
    }
 
    tester (example15, {
@@ -283,7 +283,7 @@ Run the examples by either including the script in a webpage or by running `node
       try {
          result = teishi.v ([
             ['array', array, 'array'],
-            ['array length', array.length, 3, {test: teishi.test.equal}]
+            ['array length', array.length, 3, teishi.test.equal]
          ]);
       }
       catch (err) {result = 'This function crashed! Please put a function guard.'}
@@ -299,7 +299,7 @@ Run the examples by either including the script in a webpage or by running `node
    function example18 (array) {
       return teishi.v ([
          ['array', array, 'array'],
-         function () {return ['array length', array.length, 3, {test: teishi.test.equal}]}
+         function () {return ['array length', array.length, 3, teishi.test.equal]}
       ]);
    }
 
@@ -313,9 +313,9 @@ Run the examples by either including the script in a webpage or by running `node
       return teishi.v ([
          [teishi.t (input) === 'array', [
             function () {
-               return ['input.length', input.length, 3, {test: teishi.test.equal}]
+               return ['input.length', input.length, 3, teishi.test.equal]
             },
-            ['items of input', input, 'string', {multi: 'each'}]
+            ['items of input', input, 'string', 'each']
          ]]
       ]);
    }
@@ -334,7 +334,7 @@ Run the examples by either including the script in a webpage or by running `node
             return [
                options.port !== undefined, [
                   ['options.port', options.port, 'integer'],
-                  ['options.port', options.port, {min: 1, max: 65536}, {test: teishi.test.range}]
+                  ['options.port', options.port, {min: 1, max: 65536}, teishi.test.range]
                ]
             ]
          }
@@ -351,7 +351,7 @@ Run the examples by either including the script in a webpage or by running `node
    });
 
    function validateWidget21 (widget) {
-      return teishi.v (['widget', widget, 'valid widget', {test: teishi.test.equal}]);
+      return teishi.v (['widget', widget, 'valid widget', teishi.test.equal]);
    }
 
    function example21Capture (widget, sprocket) {
@@ -384,25 +384,24 @@ Run the examples by either including the script in a webpage or by running `node
 
    function validateTeishiRule (rule) {
       var metarule = [
-         ['teishi rule', rule, ['function', 'boolean', 'array'], {multi: 'oneOf'}],
+         ['teishi rule', rule, ['function', 'boolean', 'array'], 'oneOf'],
          [teishi.t (rule) === 'array', [
             function () {
                return [(teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string')), [
                   ['teishi simple rule', rule, 'array'],
-                  ['length of teishi simple rule', rule.length, [3, 4], {multi: 'oneOf', test: teishi.test.equal}],
-                  ['rule name', rule [0], ['string', 'array'], {multi: 'oneOf'}],
+                  ['length of teishi simple rule', rule.length, {min: 3, max: 5}, teishi.test.range],
+                  ['rule name', rule [0], ['string', 'array'], 'oneOf'],
                   [teishi.t (rule [0]) === 'array', [
-                     function () {return ['rule name', rule [0].length, 2, {test: teishi.test.equal}]},
-                     ['rule name', rule [0], 'string', {multi: 'each'}],
+                     function () {return ['rule name', rule [0].length, 2, teishi.test.equal]},
+                     ['rule name', rule [0], 'string', 'each'],
                   ]],
-                  ['rule options', rule [3], ['object', 'undefined'], {multi: 'oneOf'}],
-                  [teishi.t (rule [3]) === 'object', [
-                     function () {
-                        ['keys of rule options', dale.keys (rule [3]), ['multi', 'test'], {multi: 'eachOf', test: teishi.test.equal}],
-                        ['options.multi', rule [3].multi, [undefined, 'each', 'oneOf', 'eachOf'], {multi: 'oneOf', test: teishi.test.equal}],
-                        ['options.test', rule [3].test, ['undefined', 'function'], {multi: 'oneOf'}]
-                     }
-                  ]]
+                  ['rule options', rule [3], ['string', 'function', 'undefined'], 'oneOf'],
+                  ['rule options', rule [4], ['string', 'function', 'undefined'], 'oneOf'],
+                  [teishi.t (rule [3]) === 'string', ['multi operator', rule [3], ['each', 'oneOf', 'eachOf'], 'oneOf', teishi.test.equal]],
+                  [teishi.t (rule [4]) === 'string', ['multi operator', rule [4], ['each', 'oneOf', 'eachOf'], 'oneOf', teishi.test.equal]],
+                  [rule [3] !== undefined && rule [4] !== undefined, [
+                     [['type of multi operator', 'type of test function'], teishi.t (rule [3]), teishi.t (rule [4]), teishi.test.notEqual],
+                  ]],
                ]]
             }
          ]]
@@ -423,7 +422,7 @@ Run the examples by either including the script in a webpage or by running `node
    tester (validateTeishiRule, {
       invalid1: /a/,
       invalid2: [1, 2, 3, 4],
-      valid1: ['array', null, 'array'],
+      valid1: ['array', null, 'array']
    });
 
    function validateWidget (widget) {
