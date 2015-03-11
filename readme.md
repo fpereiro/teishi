@@ -6,6 +6,50 @@ teishi is a tool for validating the input of functions.
 
 teishi means "stop" in Japanese. The inspiration for the library comes from the concept of "auto-activation", which is one of the two main pillars of the Toyota Production System (according to its creator, [Taiichi Ohno](http://en.wikipedia.org/wiki/Taiichi_Ohno)).
 
+## Usage examples
+
+Validate the input of a function that receives two arguments, an integer (`counter`) and a function (`callback`). The second argument is optional.
+
+```javascript
+function example1 (counter, callback) {
+   if (teishi.stop ('example1', [
+      ['counter', counter, 'integer'],
+      ['callback', callback, ['function', 'undefined'], 'oneOf']
+   ])) return false;
+
+   // If we are here, the tests passed and we can trust the input.
+```
+
+Validate the input of a function that receives two arguments, a string (`action`) which can have four possible values ('create', 'read', 'update' and 'delete'), and an integer between 0 and 100 (`limit`).
+
+```javascript
+function example2 (action, limit) {
+   if (teishi.stop ('example2', [
+      ['action', action, ['create', 'read', 'update', 'delete'], 'oneOf', teishi.test.equal],
+      ['limit', limit, 'integer'],
+      [['limit', 'page size'], limit, {min: 0, max: 100}, teishi.test.range]
+   ])) return false;
+
+   // If we are here, the tests passed and we can trust the input.
+```
+
+Validate the input of a function that receives an object with two keys, `action` and `limit`. The applicable rules are the same than those in function `example2` above.
+
+```javascript
+function example3 (input) {
+   if (teishi.stop ('example3', [
+      ['input', input, 'object'],
+      ['keys of input', dale.keys (input), ['action', 'limit'], 'eachOf', teishi.test.equal],
+      function () {return [
+         ['input.action', input.action, ['create', 'read', 'update', 'delete'], 'oneOf', teishi.test.equal],
+         ['input.limit', input.limit, 'integer'],
+         [['input.limit', 'page size'], input.limit, {min: 0, max: 100}, teishi.test.range]
+      ]}
+   ])) return false;
+
+   // If we are here, the tests passed and we can trust the input.
+```
+
 ## Auto-activation
 
 Auto-activation means that a machine or process stops immediately when an error is found, instead of going on until the faults in the process make it break down completely. Let's restate this: **an auto-activated machine stops on its own when it detects an error.**
@@ -99,50 +143,6 @@ if (teishi.stop ('myFunction', [
 Auto-activated validations using teishi are 50-75% smaller (counting either lines or tokens) than the boilerplate they replace.
 
 More importantly, teishi allows you to express rules succintly and regularly, which makes rules easier to both read and write. Its core purpose is to facilitate as much as possible the exacting task of defining precisely the input of your functions.
-
-## Usage examples
-
-Validate the input of a function that receives two arguments, an integer (`counter`) and a function (`callback`). The second argument is optional.
-
-```javascript
-function example1 (counter, callback) {
-   if (teishi.stop ('example1', [
-      ['counter', counter, 'integer'],
-      ['callback', callback, ['function', 'undefined'], 'oneOf']
-   ])) return false;
-
-   // If we are here, the tests passed and we can trust the input.
-```
-
-Validate the input of a function that receives two arguments, a string (`action`) which can have four possible values ('create', 'read', 'update' and 'delete'), and an integer between 0 and 100 (`limit`).
-
-```javascript
-function example2 (action, limit) {
-   if (teishi.stop ('example2', [
-      ['action', action, ['create', 'read', 'update', 'delete'], 'oneOf', teishi.test.equal],
-      ['limit', limit, 'integer'],
-      [['limit', 'page size'], limit, {min: 0, max: 100}, teishi.test.range]
-   ])) return false;
-
-   // If we are here, the tests passed and we can trust the input.
-```
-
-Validate the input of a function that receives an object with two keys, `action` and `limit`. The applicable rules are the same than those in function `example2` above.
-
-```javascript
-function example3 (input) {
-   if (teishi.stop ('example3', [
-      ['input', input, 'object'],
-      ['keys of input', dale.keys (input), ['action', 'limit'], 'eachOf', teishi.test.equal],
-      function () {return [
-         ['input.action', input.action, ['create', 'read', 'update', 'delete'], 'oneOf', teishi.test.equal],
-         ['input.limit', input.limit, 'integer'],
-         [['input.limit', 'page size'], input.limit, {min: 0, max: 100}, teishi.test.range]
-      ]}
-   ])) return false;
-
-   // If we are here, the tests passed and we can trust the input.
-```
 
 ## Installation
 
@@ -279,7 +279,7 @@ As a result, `teishi.test.equal` will compare the values of two objects or array
 ['input', [1, 2, 3], [1, 2, 3], teishi.test.equal] // this will return true
 ```
 
-Historical note: in a previous version of teishi, `teishi.test.equal` was the default test function, until after dutifully writing `test: teishi.test.type` in my teishi rules a few hundred times I realized that type checking was 5-10 times more prevalent than equality checks.
+Historical note: in a previous version of teishi, `teishi.test.equal` was the default test function, until after dutifully writing `teishi.test.type` in my teishi rules a few hundred times I realized that type checking was 5-10 times more prevalent than equality checks.
 
 #### `teishi.test.notEqual`
 
@@ -916,7 +916,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.0.0
+teishi - v3.0.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1183,7 +1183,6 @@ We set a local variable `color` to the value of `lastColor`. We then set it to a
 We return the corresponding ANSI codes for coloring either text or background, depending on whether `reverse` is set or not.
 
 ```javascript
-            return '\033[' + (reverse ? '4' : '3') + color + 'm';
             return '\033[' + (reverse ? '4' : '3') + color + 'm';
          }
       }

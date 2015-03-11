@@ -1,5 +1,5 @@
 /*
-teishi - v3.0.0
+teishi - v3.0.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -93,7 +93,6 @@ Please refer to readme.md to read the annotated source.
             var color = lastColor;
             while (lastColor === color) color = Math.round (Math.random () * 5 + 1);
             lastColor = color;
-            return '\033[' + (reverse ? '4' : '3') + color + 'm';
             return '\033[' + (reverse ? '4' : '3') + color + 'm';
          }
       }
