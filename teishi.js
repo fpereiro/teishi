@@ -1,5 +1,5 @@
 /*
-teishi - v3.0.1
+teishi - v3.0.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -102,7 +102,7 @@ Please refer to readme.md to read the annotated source.
          return dale.do (value, function (v, k) {
             var type = teishi.t (v);
 
-            if (! recursive && k === 0 && (type === 'string' || type === 'integer')) {
+            if (! recursive && k === 0 && (type === 'string' || type === 'integer') && value.length > 1) {
                label = v;
                return '';
             }
@@ -127,6 +127,8 @@ Please refer to readme.md to read the annotated source.
       console.log ('(' + (teishi.time () - ms) + 'ms)', ansi.bold + (label ? ansi.color (true) + label + ':' + ansi.end : '') + ansi.bold + output + ansi.end);
       return false;
    }
+
+   teishi.lno = function () {isNode = false; teishi.l.apply (teishi.l, arguments)}
 
    // *** TEST FUNCTIONS ***
 

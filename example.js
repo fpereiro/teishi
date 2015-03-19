@@ -1,5 +1,5 @@
 /*
-teishi - v3.0.1
+teishi - v3.0.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 

@@ -845,7 +845,11 @@ Why use `teishi.l` instead of `console.log`?
 - It prints a time offset that can be helpful when profiling code.
 - You save three keystrokes every time you invoke this function.
 
-`teishi.l` takes one or more arguments, of any type. If the first argument is a string, it will be treated as a `label`, which is just some text with a different background color.
+`teishi.l` takes one or more arguments, of any type. If the first argument is a string, and there's more than one argument passed to `teishi.l`, the first argument will be treated as a `label`, which is just some text with a different background color, followed by a colon (`:`).
+
+It is important to notice that colorized output will only be present in node.js, since there's no standard way of giving format to the javascript console in browsers.
+
+If you want to send the output of `teishi.l` to a logfile, the color codes will bother you. In this case, invoke instead `teishi.lno` (short for **l**og with **no** colors), which is a minimal wrapper around `teishi.l`.
 
 ## Custom test functions
 
@@ -916,7 +920,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.0.1
+teishi - v3.0.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1208,10 +1212,10 @@ For every item in `value`, we'll note its type.
             var type = teishi.t (v);
 ```
 
-If we are in a non-recursive (initial) call to `inner`, and we are iterating the first element of `value`, and this element is either a string or an integer, we'll set this value to the `label` and return an empty string.
+If a) we are in a non-recursive (initial) call to `inner`, b) we are iterating the first element of `value`, c) this element is either a string or an integer, and d) there's more than one element in value, we'll set the current value as the `label` and return an empty string.
 
 ```javascript
-            if (! recursive && k === 0 && (type === 'string' || type === 'integer')) {
+            if (! recursive && k === 0 && (type === 'string' || type === 'integer') && value.length > 1) {
                label = v;
                return '';
             }
@@ -1302,6 +1306,12 @@ There's nothing else to do after this, so we close the function.
 ```javascript
       return false;
    }
+```
+
+We add `teishi.lno`, a function that by setting `isNode` to false, will always print output without any ANSI color codes.
+
+```javascript
+   teishi.lno = function () {isNode = false; teishi.l.apply (teishi.l, arguments)}
 ```
 
 ### Test functions
