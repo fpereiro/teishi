@@ -1264,7 +1264,7 @@ If the element is an array or object, we surround it with angle/curly brackets, 
             if (type === 'object') v = ansi.white + '{' + v + ansi.white + '}';
 ```
 
-If `value` (the outer element) is an object, we place the key (colored with `ansi.color`) plus colons, plus `v`. If the key contains non-alphanumeric characters, we will surround it with quotes.
+If `value` (the outer element) is an object, we place the key (colored with `ansi.color`) followed by a colon, a space and `v`. If the key contains non-alphanumeric characters, we will surround it with quotes so that the output of teishi.l is a properly formatted object.
 
 ```javascript
             if (teishi.t (value) === 'object') v = ansi.color () + (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ' + v;
