@@ -1,5 +1,5 @@
 /*
-teishi - v3.0.2
+teishi - v3.0.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -111,12 +111,11 @@ Please refer to readme.md to read the annotated source.
 
             if (teishi.complex (v)) v = inner (v, true);
 
-            if (teishi.t (value) === 'object') v = (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ' + v;
-
             v = ansi.color () + v + ansi.white;
 
             if (type === 'array')  v = ansi.white + '[' + v + ansi.white + ']';
             if (type === 'object') v = ansi.white + '{' + v + ansi.white + '}';
+            if (teishi.t (value) === 'object') v = ansi.color () + (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ' + v;
 
             return v;
          }).join (recursive ? ', ' : ' ');

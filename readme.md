@@ -920,7 +920,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.0.2
+teishi - v3.0.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1251,12 +1251,6 @@ Now, in javascript, the key of an object can be any string, but if you use a key
 }
 ```
 
-In case you want to copy the output of an object printed by `teishi.l`, we will surround `k` by quotes in case it contains non-alphanumeric characters.
-
-```javascript
-            if (teishi.t (value) === 'object') v = (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ' + v;
-```
-
 We prepend the element with a color code and then append an ANSI code to clear all formatting.
 
 ```javascript
@@ -1268,6 +1262,12 @@ If the element is an array or object, we surround it with angle/curly brackets, 
 ```javascript
             if (type === 'array')  v = ansi.white + '[' + v + ansi.white + ']';
             if (type === 'object') v = ansi.white + '{' + v + ansi.white + '}';
+```
+
+If `value` (the outer element) is an object, we place the key (colored with `ansi.color`) plus colons, plus `v`. If the key contains non-alphanumeric characters, we will surround it with quotes.
+
+```javascript
+            if (teishi.t (value) === 'object') v = ansi.color () + (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ' + v;
 ```
 
 There's nothing else to do, so we return the element.
