@@ -1,5 +1,5 @@
 /*
-teishi - v3.0.3
+teishi - v3.0.4
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -21,19 +21,19 @@ Please refer to readme.md to read the annotated source.
 
    teishi.t = function (value) {
       var type = typeof value;
+      if (type !== 'object' && type !== 'number') return type;
       if (type === 'number') {
-         if      (isNaN (value))      type = 'nan';
-         else if (! isFinite (value)) type = 'infinity';
-         else if (value % 1 === 0)    type = 'integer';
-         else                         type = 'float';
+         if      (isNaN (value))      return 'nan';
+         else if (! isFinite (value)) return 'infinity';
+         else if (value % 1 === 0)    return 'integer';
+         else                         return 'float';
       }
-      if (type === 'object') {
-         if (value === null)                                               type = 'null';
-         if (Object.prototype.toString.call (value) === '[object Date]')   type = 'date';
-         if (Object.prototype.toString.call (value) === '[object Array]')  type = 'array';
-         if (Object.prototype.toString.call (value) === '[object RegExp]') type = 'regex';
-      }
-      return type;
+      if (value === null) return 'null';
+      type = Object.prototype.toString.call (value);
+      if (type === '[object Object]') return 'object';
+      if (type === '[object Array]')  return 'array';
+      if (type === '[object RegExp]') return 'regex';
+      if (type === '[object Date]')   return 'date';
    }
 
    teishi.s = function () {
@@ -162,7 +162,7 @@ Please refer to readme.md to read the annotated source.
 
          if (eachValue !== undefined)  error.push ('each of the');
          if (names [0])                error.push (names [0]);
-         if (functionName)             error = error.concat (['passed to', 'function ' + functionName]);
+         if (functionName)             error = error.concat (['passed to', functionName]);
                                        error.push (clauses [0]);
          if (ofValue !== undefined)    error.push ('one of');
              ofValue !== undefined ?   error.push (ofValue) :      error.push (to);

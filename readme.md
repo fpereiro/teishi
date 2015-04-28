@@ -920,7 +920,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.0.3
+teishi - v3.0.4
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -966,22 +966,46 @@ The purpose of `teishi.t` is to create an improved version of `typeof`. The impr
 
 `type` takes a single argument (of any type, naturally) and returns a string which can be any of: `nan`, `infinity`, `integer`, `float`, `array`, `object`, `function`, `string`, `regex`, `date`, `null` and `undefined`.
 
+We first apply `typeof` to `value`.
+
 ```javascript
    teishi.t = function (value) {
       var type = typeof value;
+```
+
+`teishi.t` will only a result different from `typeof` if `type` is neither `object` nor `number`. If it's not the case, we `return` the `type`.
+
+```javascript
+      if (type !== 'object' && type !== 'number') return type;
+```
+
+If `type` is `number`, we distinguish between `nan`, `infinity`, `integer` and `float`.
+
+```javascript
       if (type === 'number') {
-         if      (isNaN (value))      type = 'nan';
-         else if (! isFinite (value)) type = 'infinity';
-         else if (value % 1 === 0)    type = 'integer';
-         else                         type = 'float';
+         if      (isNaN (value))      return 'nan';
+         else if (! isFinite (value)) return 'infinity';
+         else if (value % 1 === 0)    return 'integer';
+         else                         return 'float';
       }
-      if (type === 'object') {
-         if (value === null)                                               type = 'null';
-         if (Object.prototype.toString.call (value) === '[object Date]')   type = 'date';
-         if (Object.prototype.toString.call (value) === '[object Array]')  type = 'array';
-         if (Object.prototype.toString.call (value) === '[object RegExp]') type = 'regex';
-      }
-      return type;
+```
+
+If we're here, `type` is `object`. We first deal with the case of `null`.
+
+```javascript
+      if (value === null) return 'null';
+```
+
+We invoke `Object.prototype.toString` on `value`, and assign that to `type`. According to its value, we'll return `object`, `array`, `regex` and `date`. The order in which we return these values is in approximate frequency with the actual types encountered.
+
+Notice that we have no fallback default value: if a non-conformant javascript implementation returns something other than `[object Object|Array|Regexp|Date]`, this function will `return` `undefined`.
+
+```javascript
+      type = Object.prototype.toString.call (value);
+      if (type === '[object Object]') return 'object';
+      if (type === '[object Array]')  return 'array';
+      if (type === '[object RegExp]') return 'regex';
+      if (type === '[object Date]')   return 'date';
    }
 ```
 
@@ -1403,7 +1427,7 @@ The block below, although tedious to read, is best explained by reading the code
 
          if (eachValue !== undefined)  error.push ('each of the');
          if (names [0])                error.push (names [0]);
-         if (functionName)             error = error.concat (['passed to', 'function ' + functionName]);
+         if (functionName)             error = error.concat (['passed to', functionName]);
                                        error.push (clauses [0]);
          if (ofValue !== undefined)    error.push ('one of');
              ofValue !== undefined ?   error.push (ofValue) :      error.push (to);
