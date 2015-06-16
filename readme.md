@@ -1106,18 +1106,22 @@ No circular references here, yet. When we invoke `teishi.c` on this input, on re
 
 - When processing `input`:
    `path` -> `['$root']`
+
    `seen` -> `['$root', input]`.
 
 - When processing `input.a`:
    `path` -> `['$root', 'a']`
+
    `seen` -> `[['$root'], input, ['$root', 'a'], a]`.
 
 - When processing `input.a.b`:
    `path` -> `['$root', 'a', 'b']`
+
    `seen` -> `[['$root'], input, ['$root', 'a'], a, ['$root', 'a', 'b'], b]`.
 
 - When processing `input.c`:
    `path` -> `['$root', 'c']`
+
    `seen` -> `[['$root'], input, ['$root', 'c'], c]`
 
 - When processing `input.d`, since `d` is neither an object nor an array, `seen` and `path` will remain the same.
@@ -1170,6 +1174,7 @@ If this element is not a circular reference, we do four things:
             seen.push (path.concat ([k])) && seen.push (v);
             return output [k] = teishi.c (v, path.concat ([k]), seen.concat ());
          }
+```
 
 If we are here, we have (finally) detected a circular reference. `v` shouldn't be contained in `input`, since it contains either `input` or another element that contains `input`.
 
