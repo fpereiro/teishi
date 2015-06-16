@@ -1,5 +1,5 @@
 /*
-teishi - v3.0.4
+teishi - v3.1.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -13,7 +13,7 @@ Run the examples by either including the script in a webpage or by running `node
    var dale   = isNode ? require ('dale')        : window.dale;
    var teishi = isNode ? require ('./teishi.js') : window.teishi;
 
-   function tester (fun, inputs) {
+   var tester = function (fun, inputs) {
       var funame    = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$1');
       var arglength = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$2').split (',').length;
       dale.stopOn (inputs, false, function (v, k) {

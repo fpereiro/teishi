@@ -793,21 +793,26 @@ teishi relies on eight helper functions which can also be helpful beyond the dom
 
 ### teishi.t
 
-`teishi.t` (short for `teishi.type`) takes a single argument and returns a string indicating the value of that argument.
+`teishi.t` (short for `teishi.type`) takes an argument and returns a string indicating the value of that argument.
 
-The possible types are:
-- `'integer'`
-- `'float'`
-- `'nan'`
-- `'infinity'`
-- `'object'`
-- `'array'`
-- `'regex'`
-- `'date'`
-- `'null'`
-- `'function'`
-- `'undefined'`
-- `'string'`
+The purpose of `teishi.t` is to create an improved version of `typeof`. The improvements are two:
+
+- Distinguish between types of numbers: `nan`, `infinity`, `integer` and `float` (all of which return `number` in `typeof`).
+- Distinguish between `array`, `date`, `null`, `regex` and `object` (all of which return `object` in `typeof`).
+
+The possible types of a value can be grouped into three:
+- **Values which `typeof` detects appropriately**: `boolean`, `string`, `undefined`, `function`.
+- **Values which `typeof` considers `number`**: `nan`, `infinity`, `integer`, `float`.
+- **values which `typeof` considers `object`**: `array`, `date`, `null`, `regex` and `object`.
+
+If you pass `true` as a second argument, `type` will distinguish between *true objects* (ie: object literals) and other objects. If you pass an object that belongs to a class, `type` will return the lowercased class name instead.
+
+The clearest example of this is the `arguments` object:
+
+```javascript
+type (arguments)        // returns 'object'
+type (arguments, true)  // returns 'arguments'
+```
 
 ### teishi.s and teishi.p
 
@@ -827,9 +832,13 @@ If they receive invalid input, these two functions will return `false` instead o
 
 ### teishi.c
 
-`teishi.c` (short for `teishi.copy`) takes a complex input (either an array or an object) and returns a copy. Also, if there are circular references in that input, it will replace them with the string `'[Circular Reference]'`.
+`teishi.c` (short for `teishi.copy`) takes a complex input (either an array or an object) and returns a copy.
 
 This function is useful when you want to pass an array or object to a function that will modify it *and* you want the array or object in question to remain modified outside of the scope of that function. [javascript passes objects and arrays by reference](http://stackoverflow.com/questions/13104494/does-javascript-pass-by-reference/13104500#13104500), so in this case you need to copy the array or object to avoid side effects.
+
+If `input` has any circular references, `teishi.c` will replace them a string with the form `'CIRCULAR REFERENCE: {{PATH}}'`, where `{{PATH}}` is the path to the object referred to in the circular reference. For example, if `input.prop1` refers to `input.prop2`, and `input.prop2` refers to `input.prop1`, `input.prop2` will be replaced with the string `'CIRCULAR REFERENCE: $root.prop1'`.
+
+If `input` is (or contains) an `arguments` pseudo-array, it will be copied into a standard array.
 
 ### teishi.time
 
@@ -849,7 +858,7 @@ Why use `teishi.l` instead of `console.log`?
 
 It is important to notice that colorized output will only be present in node.js, since there's no standard way of giving format to the javascript console in browsers.
 
-If you want to send the output of `teishi.l` to a logfile, the color codes will bother you. In this case, invoke instead `teishi.lno` (short for **l**og with **no** colors), which is a minimal wrapper around `teishi.l`.
+If you want to send the output of `teishi.l` to a logfile, the color codes will bother you. In this case, invoke once `teishi.lno` (short for **l**og with **no** colors), which will turn off all colorized output for any subsequent invocation to `teishi.l`.
 
 ## Custom test functions
 
@@ -914,13 +923,13 @@ For more information, please refer to the annotated source code below, where I d
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 360 lines long.
+The complete source code is contained in `teishi.js`. It is about 380 lines long.
 
 Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.0.4
+teishi - v3.1.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -966,10 +975,15 @@ The purpose of `teishi.t` is to create an improved version of `typeof`. The impr
 
 `type` takes a single argument (of any type, naturally) and returns a string which can be any of: `nan`, `infinity`, `integer`, `float`, `array`, `object`, `function`, `string`, `regex`, `date`, `null` and `undefined`.
 
+If we pass a truthy second argument to `teishi.t`, and `input` turns out to be an object, `teishi.t` will return the lowercased name of the class of the object (which, for example, can be `object` for object literals, `arguments` for `arguments` pseudo-arrays, and other, user-created classes).
+
+```javascript
+   teishi.t = function (value, objectType) {
+```
+
 We first apply `typeof` to `value`.
 
 ```javascript
-   teishi.t = function (value) {
       var type = typeof value;
 ```
 
@@ -990,22 +1004,30 @@ If `type` is `number`, we distinguish between `nan`, `infinity`, `integer` and `
       }
 ```
 
-If we're here, `type` is `object`. We first deal with the case of `null`.
+If we're here, `type` is `object`, so now we want to find out which kind of object we're dealing with. We will do the following:
+
+- Stringify `value` through the function `Object.prototype.toString` and assign it to `type`.
+- `type` will now be a string of the form `'[object CLASSNAME]'`, where `CLASSNAME` is what we're looking for.
+- We get rid of everything but the `CLASSNAME`, and we lowercase the result.
 
 ```javascript
-      if (value === null) return 'null';
+      type = Object.prototype.toString.call (value).replace ('[object ', '').replace (']', '').toLowerCase ();
 ```
 
-We invoke `Object.prototype.toString` on `value`, and assign that to `type`. According to its value, we'll return `object`, `array`, `regex` and `date`. The order in which we return these values is in approximate frequency with the actual types encountered.
-
-Notice that we have no fallback default value: if a non-conformant javascript implementation returns something other than `[object Object|Array|Regexp|Date]`, this function will `return` `undefined`.
+Now, if `type` is `array`, `date` or `null`, we simply return the `type`. And if `type` is `regexp`, we return `regex` instead.
 
 ```javascript
-      type = Object.prototype.toString.call (value);
-      if (type === '[object Object]') return 'object';
-      if (type === '[object Array]')  return 'array';
-      if (type === '[object RegExp]') return 'regex';
-      if (type === '[object Date]')   return 'date';
+      if (type === 'array' || type === 'date' || type === 'null') return type;
+      if (type === 'regexp') return 'regex';
+```
+
+Now, if the function received a truthy second argument, we want to return the exact class name of this object. In that case, we return `type`. Otherwise, we just return `object`.
+
+After this, there's nothing left to do, so we close the function.
+
+```javascript
+      if (objectType) return type;
+      return 'object';
    }
 ```
 
@@ -1038,12 +1060,12 @@ Notice that we have no fallback default value: if a non-conformant javascript im
 
 `teishi.c` does two things: 1) copy an input; 2) eliminate any circular references within the copied input.
 
-The "public" interface of the function (if we allow that distinction) takes a single argument, the `input` we want to copy. However, we define a second "private" argument (`seen`) that the function will use to pass information to recursive calls.
+The "public" interface of the function (if we allow that distinction, since in practice the user can pass extra arguments) takes a single argument, the `input` we want to copy. However, we define two "private" arguments (`seen` and `path`) that the function will use to pass information to recursive calls.
 
 This function is recursive. On recursive calls, `input` won't represent the `input` that the user passed to the function, but rather one of the elements that are contained within the original `input`.
 
 ```javascript
-   teishi.c = function (input, seen) {
+   teishi.c = function (input, path, seen) {
 ```
 
 If `input` is not an array or object, we just return the `input` itself.
@@ -1052,32 +1074,65 @@ If `input` is not an array or object, we just return the `input` itself.
       if (teishi.simple (input)) return input;
 ```
 
-`seen` is where we store the information needed to detect circular references. For any given `input`, `seen` will contain a reference to all arrays and objects that *contain* the current input. For example, if you have an array `a` (the outermost element) which contains an object `b`, and that object `b` contains an array `c`, these will be the values of `seen`:
+`path` and `seen` is where we store the information needed to 1) detect circular references; and 2) know where they point to. This is best seen with an example.
 
-`When processing a: []`
+When `teishi.c` is invoked for the first time (non-recursively) and it receives a complex input, it will initialize `path` and `seen`. Both are arrays.
 
-`When processing b: [a]`
-
-`When processing c: [a, b]`
-
-Now imagine that `c` contains a reference to `a`: this would be a circular reference, because `a` contains `c` and `c` contains `a`. What we want to do here is replace the reference to `a` within `c` to a string, to eliminate the reference.
-
-On the initial (non-recursive) call to the function, `seen` will be `undefined`. Because of how [`dale.do` works](http://github.com/fpereiro/dale#daledo), if `seen` is `undefined`, it will be initialized to an empty array.
-
-If `seen` is already an array, it will be replaced by a new array with the same elements. We do this to create a *local copy* of `seen` that will only be used by the instance of the function being executed (and no other parallel recursive calls).
-
-Why do we copy `seen`? Interestingly enough, for the same reason that we write this function: arrays and objects in javascript are passed by reference. If many simultaneous recursive calls received `seen`, the modifications they will do to it will be visible to other parallel recursive calls, and we want to avoid precisely this.
-
-The detection of circular references in `teishi.c` is best thought of as a path in a graph, from container object to contained one. For any point in the graph, we want to have the list of all containing nodes, and verify that none of them will be repeated. Any other path through the graph is what I tried to convey by *parallel recursive function call*.
+`path` will be initialized to `['$root']`, where `$root` is a placeholder for the outermost element passed to the function.
 
 ```javascript
-      seen = dale.do (seen, function (v) {return v});
+      path = path || ['$root'];
 ```
+
+`seen` will be initialized to an array with two elements, `path` (which at this point is `['$root']`) and `input`. What we're storing as the second element of `seen` is, effectively, a reference to `input`.
+
+```javascript
+      seen = seen || [path, input];
+```
+
+Now, how is this helpful to detect circular references? This is best explained by an example. Imagine that `input` is the following object:
+
+```javascript
+var input = {
+   'a': {
+      b: []
+   },
+   c: {},
+   d: 45
+}
+```
+
+No circular references here, yet. When we invoke `teishi.c` on this input, on recursive calls, these will be the values of `path` and `seen`:
+
+- When processing `input`:
+   `path` -> `['$root']`
+   `seen` -> `['$root', input]`.
+
+- When processing `input.a`:
+   `path` -> `['$root', 'a']`
+   `seen` -> `[['$root'], input, ['$root', 'a'], a]`.
+
+- When processing `input.a.b`:
+   `path` -> `['$root', 'a', 'b']`
+   `seen` -> `[['$root'], input, ['$root', 'a'], a, ['$root', 'a', 'b'], b]`.
+
+- When processing `input.c`:
+   `path` -> `['$root', 'c']`
+   `seen` -> `[['$root'], input, ['$root', 'c'], c]`
+
+- When processing `input.d`, since `d` is neither an object nor an array, `seen` and `path` will remain the same.
+
+As you can see, `path` is always an array with a succession of strings (or integers, in case an array contains arrays or objects). And `seen` is an array where we place an even amount of elements, the even element being the path to an object/array, and the odd element next to it being the corresponding reference to said object/array.
+
+The detection of circular references in `teishi.c` is best thought of as a path in a graph, from container object to contained one. For any point in the graph, we want to have the list of all containing nodes, and verify that none of them will be repeated.
+
+We detect the `inputType` of `input`. What we want to know here is if we're dealing with an array, an object, or an `arguments` pseudo-array - we want to treat the latter as an array.
 
 We initialize the `output` variable to either an empty array or object, depending on the type of input.
 
 ```javascript
-      var output = type === 'array' ? [] : {};
+      var inputType = teishi.t (input, true);
+      var output    = inputType === 'array' || inputType === 'arguments' ? [] : {};
 ```
 
 We iterate through the elements of `input`.
@@ -1087,19 +1142,36 @@ We iterate through the elements of `input`.
       dale.do (input, function (v, k) {
 ```
 
-For the purposes of detecting and eliminating circular references, we first consider arrays and objects first.
+If `v` is neither an array nor an object, we set `output [k]` to `v` and return from this inner function.
 
 ```javascript
-         if (teishi.complex (v)) {
+         if (teishi.simple (v)) return output [k] = v;
 ```
 
-We loop through the elements of `seen` and check if `v` (an array/object contained within `input`) is in the list of arrays/objects that *contain* `input`. If that's the case, the iteration will return `true`, stop the process and activate the conditional below.
+We loop through the elements of `seen` and check if `v` (an array/object contained within `input`) is in the list of arrays/objects that *contain* `input`. If that's the case, the loop will stop and the corresponding `path` element of the circular reference will be assigned to the variable `circular`. If no circular references are detected, `circular` will be equal to `undefined`.
+
+Notice that by adding the clause `k2 % 2 !== 0` we ignore the even elements of `seen`, which are only `path`s (instead of references to actual arrays or objects).
 
 ```javascript
-            if (dale.stopOn (seen, true, function (v2) {return v === v2})) {
+         var circular = dale.stopOnNot (seen, undefined, function (v2, k2) {
+            if (k2 % 2 !== 0 && v === v2) return seen [k2 - 1];
+         });
 ```
 
-If we are here, we have detected a circular reference. `v` shouldn't be contained in `input`, since it contains either `input` or another element that contains `input`.
+If this element is not a circular reference, we do four things:
+
+- Concatenate the key corresponding to this element to the path, and push that path into `seen`.
+- Push the actual element into `seen`.
+- Call `teishi.c` recursively, passing `v`, `path` and a copy of `seen` as arguments, and set the result of that computation to `output [k]`.
+- Return from the inner function.
+
+```javascript
+         if (! circular) {
+            seen.push (path.concat ([k])) && seen.push (v);
+            return output [k] = teishi.c (v, path.concat ([k]), seen.concat ());
+         }
+
+If we are here, we have (finally) detected a circular reference. `v` shouldn't be contained in `input`, since it contains either `input` or another element that contains `input`.
 
 We will replace `v` by a string indicating a circular reference.
 
@@ -1113,26 +1185,12 @@ You may ask: wouldn't doing this destroy the original `v`, which also *contains*
 
 ```b = []; // a will still be [1]```
 
-Ok, back to the code. We eliminate the reference to `v` within `input`.
+Ok, back to the code. We set `output [k]` to a string that contains the path to the circular element.
+
+At this point, we've covered all cases, so we close the inner function.
 
 ```javascript
-               v = '[Circular Reference]';
-            }
-```
-
-If `v` is a complex object but it is not a circular reference, we push `v` into `seen`.
-
-```javascript
-            else seen.push (v);
-         }
-```
-
-For every element (simple and complex) inside `input`, we make a recursive call to `teishi.c`, passing `v` and `seen`. We set the result of this to the corresponding element in `output`.
-
-If the element in question is a simple value, it will be returned. If it is a complex value, `teishi.c` will return us a copy of that complex value, stripped of circular references.
-
-```javascript
-         output [k] = teishi.c (v, seen);
+         output [k] = 'CIRCULAR REFERENCE: ' + circular.join ('.');
       });
 ```
 
@@ -1142,6 +1200,30 @@ We return the output. There's nothing else to do, so we close the function.
       return output;
    }
 ```
+
+How would this function work in practice? Going back to the sample `input` we defined above, let's create some circular references and then apply `teishi.c` to `input`, to see what we get.
+
+```javascript
+input.a.b [0] = input.a.b;
+input.a.b [1] = input.a;
+input.a.b [2] = input;
+
+teishi.c (input);
+```
+
+The result of the above invocation will be:
+
+```javascript
+{ a:
+   { b:
+      [ 'CIRCULAR REFERENCE: $root.a.b',
+        'CIRCULAR REFERENCE: $root.a',
+        'CIRCULAR REFERENCE: $root' ] } }
+  c: {},
+  d: 45 }
+```
+
+OK, enough of `teishi.c`! Let's move on to the next function.
 
 We define `teishi.time`, which will return the current date in milliseconds.
 
@@ -1157,19 +1239,19 @@ We define `ms`, a local variable that holds the current date measured in millise
 
 We will now define `teishi.l` which is teishi's wrapper for console.log. The improvements are:
 - Colors.
-- Expansion of nested arrays and objects.
+- Unlimited expansion of nested arrays and objects.
 - Time offset for profiling purposes.
+- More compact indentation/newline rules for printing nested objects.
+- Stringify functions and print their first 150 characters.
 
 ```javascript
    teishi.l = function () {
 ```
 
-We define two local variables:
-- `label` will hold a value only if the first argument passed to `teishi.l` is a string.
+We define a local variables:
 - `lastColor` will hold the last color used to paint a string of text, to avoid the same color being used to paint adjacent sections of text.
 
 ```javascript
-      var label;
       var lastColor;
 ```
 
@@ -1216,32 +1298,80 @@ We return the corresponding ANSI codes for coloring either text or background, d
       }
 ```
 
-We define a function `inner` that we will apply recursively to the `arguments`. The reason for writing a function here is that we want to recurse over complex elements, such as arrays and objects.
-
-The function takes two arguments: `value`, the value to be printed, and `recursive`, a flag that indicates whether we are in a recursive invocation of the function.
+We define a local variable `indent`, a string that will hold the current level of indentation of nested objects.
 
 ```javascript
-      function inner (value, recursive) {
+      var indent = '';
 ```
 
-`inner` will `return` the output of a `dale.do` loop, iterating over the `value`.
+We define a function `inner` that we will apply recursively to the `arguments`. The reason for writing a function here is that we want to recurse over complex elements, such as arrays and objects.
+
+The function takes two arguments: `value`, the value to be printed, and `recursive`, a value that indicates the level of nestedness of the element being printed.
 
 ```javascript
-         return dale.do (value, function (v, k) {
+      var inner = function (value, recursive) {
+```
+
+We will store the output of `inner` in a local variable `output`. We initialize it to `ansi.bold`, since we want all the output to have a bolded font.
+
+```javascript
+         var output = ansi.bold;
+```
+
+We detect the type of `value` and store it in a local variable `typeValue`. If `value` is an `arguments` pseudo-array, we will set `typeValue` to `'array'`.
+
+```javascript
+         var typeValue = teishi.t (value);
+         if (typeValue === 'object' && teishi.t (value, true) === 'arguments') typeValue = 'array';
+```
+
+We define a flag `complex`, that will indicate us when we need to place opening and closing braces. This will be the case when `value` is an array/object and we're in a recursive call to `inner`.
+
+```javascript
+         var complex = (typeValue === 'array' || typeValue === 'object') && recursive > 0;
+```
+
+Why do we ignore the first, non-recursive call to `inner`? Well, when `inner` is first invoked, it actually receives the `arguments` object that `teishi.l` received in the first place. In this case, we don't want to place opening/closing braces, since otherwise every invocation to `teishi.l` would be printed as an array.
+
+We now place the braces if `complex` is `true`. Notice that we also add `ansi.white`, so that the braces will be always printed in white font.
+
+```javascript
+         if (complex) output += ansi.white + (typeValue === 'array' ? '[' : '{');
+```
+
+When `recursive` is more than two and `value` is not empty, we will do two things related to indentation:
+
+- Increase `indent` by three spaces.
+- Append a newline plus `indent` to `output`.
+
+As we apply indentation and newlines only when `recursive` is greater `2` (instead of greater than `0` or `1`), we achieve more compactness, because we will only use indentation and newlines only if an object is nested more than twice deep. With objects/arrays that are less nested, we will print it in the same line.
+
+```javascript
+         if (recursive > 2 && dale.keys (value).length > 0) {
+            indent += '   ';
+            output += '\n' + indent;
+         }
+```
+
+We now will iterate over the items of `value`, whether it's a simple or complex element. We will append the result of this iteration to `output`.
+
+```javascript
+         output += dale.do (value, function (v, k) {
 ```
 
 For every item in `value`, we'll note its type.
 
 ```javascript
-            var type = teishi.t (v);
+            var typeV = teishi.t (v);
 ```
 
-If a) we are in a non-recursive (initial) call to `inner`, b) we are iterating the first element of `value`, c) this element is either a string or an integer, and d) there's more than one element in value, we'll set the current value as the `label` and return an empty string.
+If a) we are in a non-recursive (initial) call to `inner`, b) we are iterating the first element of `value`, c) this element is either a string or an integer, and d) there's more than one element in value, we'll consider this element to be a **label**. Hence, we will apply a special background color to it, place a trailing colon and space, an ansi color codes to remove the background color and return the whole string.
+
+In this case, we will return the label.
 
 ```javascript
-            if (! recursive && k === 0 && (type === 'string' || type === 'integer') && value.length > 1) {
-               label = v;
-               return '';
+            if (recursive === 0 && k === 0 && (typeV === 'string' || typeV === 'integer') && value.length > 1) {
+               return ansi.bold + ansi.color (true) + v + ':' + ansi.end + ansi.bold;
             }
 ```
 
@@ -1251,13 +1381,19 @@ If the element being iterated is a string and we are in a recursive call to `inn
             if (type === 'string' && recursive) v = "'" + v + "'";
 ```
 
-If the element is an array or object, we invoke `inner` with the element as the `value` and `true` as `recursive`, and set the element to the value returned by `inner`.
+If the element being iterated is a function and the stringified function is more than 150 characters long, we will slice the stringified function and append ellipsis to it.
 
 ```javascript
-            if (teishi.complex (v)) v = inner (v, true);
+            if (typeV === 'function' && (v + '').length > 150) v = (v + '').replace (/\n/g, '\n' + indent).slice (0, 150) + '...';
 ```
 
-If the element is an object, we also want to print its key `k`, using the format `key: value`.
+We create a variable `innerOutput` to hold the output for the element being processed in the current iteration of the loop. We will initialize it to `ansi.color ()`, since we want this item to have its distinct color.
+
+```javascript
+            var innerOutput = ansi.color ();
+```
+
+If the element being iterated is an object, we also want to print its key `k`, using the format `key: value`.
 
 Now, in javascript, the key of an object can be any string, but if you use a key that contains non-alphanumeric characters, you need to surround it by quotes to be able to use it without producing a syntax error.
 
@@ -1275,35 +1411,48 @@ Now, in javascript, the key of an object can be any string, but if you use a key
 }
 ```
 
-We prepend the element with a color code and then append an ANSI code to clear all formatting.
+Hence, if the element is an object, we will append to `innerOutput` the key, surrounding it with quotes if it is non-alphanumeric, and appending a colon and a space.
 
 ```javascript
-            v = ansi.color () + v + ansi.white;
+            if (typeValue === 'object') innerOutput += (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ';
 ```
 
-If the element is an array or object, we surround it with angle/curly brackets, taking care of making the brackets white.
+We will now return `innerOutput`, but after appending it with one of the following:
+
+- If the element is an array or object: we invoke `inner` with the element as the `value` and an incremented `recursive` argument, and append the result of this call.
+- If it's not an array or object: we'll simply append the element itself.
 
 ```javascript
-            if (type === 'array')  v = ansi.white + '[' + v + ansi.white + ']';
-            if (type === 'object') v = ansi.white + '{' + v + ansi.white + '}';
+            return innerOutput + ((typeV === 'array' || typeV === 'object') ? inner (v, recursive + 1) : v) + ansi.white;
 ```
 
-If `value` (the outer element) is an object, we place the key (colored with `ansi.color`) followed by a colon, a space and `v`. If the key contains non-alphanumeric characters, we will surround it with quotes so that the output of teishi.l is a properly formatted object.
+Notice that we also add `ansi.white` at the end of the element, to avoid consecutive elements being colored with the same color.
+
+Before returning the result of the `dale.do` loop, we join this result with either a comma and a space (`, `) or a single space, depending on whether we are on the initial call to `inner` or not.
+
+We then close the loop function, since there's nothing else to do with the contents of `value`.
 
 ```javascript
-            if (teishi.t (value) === 'object') v = ansi.color () + (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ' + v;
+         }).join (recursive === 0 ? ' ' : ', ');
+      }
 ```
 
-There's nothing else to do, so we return the element.
+This section is a mirror of the operations we did just before iterating the elements of `value`:
+- If needed, we restore `indent` to its previous length, and also add a new line plus indentation to `output`.
+- If needed, we place the closing braces of the element.
 
 ```javascript
-            return v;
+         if (recursive > 2 && dale.keys (value).length > 0) {
+            indent = indent.slice (0, -3);
+            output += '\n' + indent;
+         }
+         if (complex) output += typeValue === 'array' ? ']' : '}';
 ```
 
-Before returning the result of the `dale.do` loop, we join this result with either a comma and a space (`, `) or a single space, depending on whether we are on a recursive call or not. This, along with the conditional quoting of strings within the `dale.do` loop, allows us to treat differently the outermost arguments of `teishi.l`.
+There's nothing left to do in `inner`, so we return `output` and close the funcdtion.
 
 ```javascript
-         }).join (recursive ? ', ' : ' ');
+         return output;
       }
 ```
 
@@ -1315,15 +1464,16 @@ Here, we first copy the `arguments` into an array. We then pass that array to `t
 
 We print the following:
 - The current time in milliseconds minus `ms` (the time in milliseconds when teishi was initialized), which will yield a time offset.
-- The `label`, with a random color as background (notice that we do this only if we are not in the browser).
-- The `output`, bolded.
-- A period at the end.
+- The colored `output`, which comes from passing `arguments` to `inner`.
+- `ansi.end`, to avoid coloring any subsequent output in the console.
 
 ```javascript
-      console.log ('(' + (teishi.time () - ms) + 'ms)', ansi.bold + (label ? ansi.color (true) + label + ':' + ansi.end : '') + ansi.bold + output + ansi.end);
+      console.log ('(' + (teishi.time () - ms) + 'ms)', inner (dale.do (arguments, function (v) {return teishi.c (v)}), 0) + ansi.end);
 ```
 
-We return `false`, since this allows calling functions to print an error and return `false` in the same line. For example: `return teishi.l ('This is an error')`.
+Notice that we don't actually pass `arguments` - instead, we iterate through `arguments`, and return a copy of each of them using `teishi.c`. The purpose of this refinement is to make circular elements (if they exist) to be printed with their proper paths. For an example of this, try printing an HTTP `response` object.
+
+Finally we return `false`, since this allows calling functions to print an error and return `false` in the same line. For example: `return teishi.l ('This is an error')`.
 
 There's nothing else to do after this, so we close the function.
 
@@ -1332,10 +1482,10 @@ There's nothing else to do after this, so we close the function.
    }
 ```
 
-We add `teishi.lno`, a function that by setting `isNode` to false, will always print output without any ANSI color codes.
+We add `teishi.lno`, a function that by setting `isNode` to false, will turn off coloring and formatting in all teishi output (and the output of other libraries that use `teishi.l` as well).
 
 ```javascript
-   teishi.lno = function () {isNode = false; teishi.l.apply (teishi.l, arguments)}
+   teishi.lno = function () {isNode = false}
 ```
 
 ### Test functions
@@ -1380,8 +1530,9 @@ If `clauses [1]` is not `undefined` and not an array, we wrap it in an array. We
          if (teishi.t (clauses [1]) !== 'array') clauses [1] = [clauses [1]];
 
          var clausesResult = dale.stopOnNot (clauses [1], true, function (v) {
-            if (teishi.t (v) === 'string' || teishi.t (v) === 'function') return true;
-            return teishi.l ('teishi.makeTest', 'Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', teishi.t (v));
+            var type = teishi.t (v);
+            if (type === 'string' || type === 'function') return true;
+            return teishi.l ('teishi.makeTest', 'Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', type);
          });
          if (clausesResult !== true) return;
       }
@@ -1495,7 +1646,7 @@ If `a` and `b` are simple, we compare them with `===` and return the result.
 If we are here, at least one of the arguments is complex. If their type is different, we return `false`, since they can't be equal.
 
 ```javascript
-            if (teishi.t (a) !== teishi.t (b)) return false;
+            if (teishi.t (a, true) !== teishi.t (b, true)) return false;
 ```
 
 We loop through the elements of `a`.
@@ -1540,7 +1691,7 @@ Although defining `simple` and `inner` outside of the test functions would elimi
 
 ```javascript
       range:    teishi.makeTest (function (a, b) {
-         if (teishi.t (b) !== 'object') {
+         if (teishi.t (b, true) !== 'object') {
             return ['Range options object must be an object but instead is', b, 'with type', teishi.t (b)];
          }
 ```
@@ -1748,14 +1899,17 @@ Since a `rule` can never be a string, and `functionName` always has to be a stri
 A subtle point: we set `functionName` to an empty string, instead of `undefined`. This is because, for recursive function calls, we want to have a fixed number of arguments, so as to simplify writing the recursive calls.
 
 ```javascript
-      var functionName = teishi.t (arguments [0]) === 'string' ? arguments [0] : '';
-      var rule         = teishi.t (arguments [0]) === 'string' ? arguments [1] : arguments [0];
+      var arg = 0;
+      var functionName = teishi.t (arguments [arg]) === 'string' ? arguments [arg++] : '';
+      var rule         = arguments [arg++];
 ```
+
+Notice that we use the variable `arg` to count the number of arguments that have already been identified. If `functionName` turns out not to be present, `arg` will still be `0` and hence we will consider `rule` to be the first argument.
 
 We set `apres` to be the argument that was passed after `rule`. If no argument was passed, it will be `undefined`.
 
 ```javascript
-      var apres        = teishi.t (arguments [0]) === 'string' ? arguments [2] : arguments [1];
+      var apres        = arguments [arg];
 ```
 
 Because we assume that `functionName` is defined only if the first argument is a string (and set its value to an empty string otherwise), `functionName` will be a string, so we don't need to validate it. This is similar to what happened with the validation-through-assumption of `names` we did in `teishi.validateRule`.
@@ -1801,17 +1955,23 @@ If `rule` is not well-formed, we pass the error to `reply` and `return`.
       if (validation !== true) return reply (validation);
 ```
 
+We store the `type` of `rule` in a local variable `ruleType`.
+
+```javascript
+      var ruleType = teishi.t (rule);
+```
+
 Boolean rules: if `rule` is a boolean, we return the rule itself.
 
 ```javascript
-      if (teishi.t (rule) === 'boolean')  return rule;
+      if (ruleType === 'boolean')  return rule;
 ```
 
 Function guards: if `rule` is a function, we invoke the `rule` and pass it recursively to `teishi.v`, taking care to also pass `functionName` and `apres`.
 
 
 ```javascript
-      if (teishi.t (rule) === 'function') return teishi.v (functionName, rule.call (rule), apres);
+      if (ruleType === 'function') return teishi.v (functionName, rule.call (rule), apres);
 ```
 
 If we are here, `rule` must be an array.
@@ -1822,10 +1982,16 @@ If it has length zero, there are no rules to validate, hence there can't be any 
       if (rule.length === 0) return true;
 ```
 
+We store the `type` of `rule [0]` in a local variable `ruleFirstType`.
+
+```javascript
+      var ruleFirstType = teishi.t (rule [0]);
+```
+
 Conditional rules: if the first element of `rule` is a boolean, if `rule` has length 2, and if the second element of `rule` is an array, we treat `rule` as a conditional one.
 
 ```javascript
-      if (teishi.t (rule [0]) === 'boolean' && rule.length === 2 && teishi.t (rule [1]) === 'array') {
+      if (ruleFirstType === 'boolean' && rule.length === 2 && teishi.t (rule [1]) === 'array') {
 ```
 
 If the boolean of the conditional is `false`, the second rule doesn't apply. Hence, we return `true`.
@@ -1844,7 +2010,7 @@ If we are here, the second rule within `rule` applies, so we pass it recursively
 We use again the intricate conditional from `teishi.validateRule` to determine whether this rule is **not** a simple one.
 
 ```javascript
-      if (! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) {
+      if (! (ruleFirstType === 'string' || (ruleFirstType === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) {
 ```
 
 Nested rule: we iterate the `rule` and pass each of its elements to recursive calls to `teishi.v`.
@@ -1891,7 +2057,7 @@ We set a local variable `names` to hold the `names` field of `rule`.
 If `names` is a string, we wrap it in an array, since the test functions will be expecting `names` to be an array. For evidence of this, check that the returned function from `teishi.makeTest` (which comprises the body of every test function) directly invokes `names [0]` and `names [1]`.
 
 ```javascript
-      var names = teishi.t (rule [0]) === 'array' ? rule [0] : [rule [0]];
+      var names = ruleFirstType === 'array' ? rule [0] : [rule [0]];
 ```
 
 We deal with a special case of `multi`: if `multi` is either `each` or `eachOf`, and the `compare` field is either `undefined`, an empty array or an empty object, we deem that there are no elements inside `compare`.
@@ -1899,7 +2065,7 @@ We deal with a special case of `multi`: if `multi` is either `each` or `eachOf`,
 In the absence of elements to validate, we consider `rule` to be fulfilled, and return `true`.
 
 ```javascript
-      if ((multi === 'each' || multi === 'eachOf') && ((teishi.t (rule [1]) === 'array' && rule [1].length === 0) || (teishi.t (rule [1]) === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
+      if ((multi === 'each' || multi === 'eachOf') && ((teishi.t (rule [1]) === 'array' && rule [1].length === 0) || (teishi.t (rule [1], true) === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
          return true;
       }
 ```
@@ -1909,7 +2075,7 @@ We deal with the other special case of `multi`: if `multi` is either `oneOf` or 
 In the absence of elements to compare to, we consider `rule` to be impossible to be fulfilled. Hence, we set `result` to an error.
 
 ```javascript
-      if ((multi === 'oneOf' || multi === 'eachOf') && ((teishi.t (rule [2]) === 'array' && rule [2].length === 0) || (teishi.t (rule [2]) === 'object' && Object.keys (rule [2]).length === 0) || rule [2] === undefined)) {
+      if ((multi === 'oneOf' || multi === 'eachOf') && ((teishi.t (rule [2]) === 'array' && rule [2].length === 0) || (teishi.t (rule [2], true) === 'object' && Object.keys (rule [2]).length === 0) || rule [2] === undefined)) {
          result = ['To field of teishi rule is', rule.to, 'but multi attribute', multi, 'requires it to be non-empty, at teishi step', rule];
       }
 ```
