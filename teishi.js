@@ -1,5 +1,5 @@
 /*
-teishi - v3.1.0
+teishi - v3.1.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -301,10 +301,15 @@ Please refer to readme.md to read the annotated source.
       var rule         = arguments [arg++];
       var apres        = arguments [arg];
 
+      if (apres !== undefined && apres !== true && teishi.t (apres) !== 'function') return teishi.l ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
+
       var reply = function (error) {
-         if      (apres === true)                  return error.join (' ');
-         else if (teishi.t (apres) === 'function') apres (error.join (' '));
-         else                                      teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
+         if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
+         error = dale.do (error, function (v) {
+            return teishi.complex (v) ? teishi.s (v) : v + '';
+         }).join (' ');
+         if (apres === true) return error;
+         apres (error);
          return false;
       }
 

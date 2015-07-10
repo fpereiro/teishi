@@ -923,13 +923,13 @@ For more information, please refer to the annotated source code below, where I d
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 380 lines long.
+The complete source code is contained in `teishi.js`. It is about 390 lines long.
 
 Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.1.0
+teishi - v3.1.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1919,31 +1919,44 @@ We set `apres` to be the argument that was passed after `rule`. If no argument w
 
 Because we assume that `functionName` is defined only if the first argument is a string (and set its value to an empty string otherwise), `functionName` will be a string, so we don't need to validate it. This is similar to what happened with the validation-through-assumption of `names` we did in `teishi.validateRule`.
 
+We validate `apres`: it must be either `undefined`, `true`, or a function. If it's not, we print an error message and return `false`.
+
+```javascript
+      if (apres !== undefined && apres !== true && teishi.t (apres) !== 'function') return teishi.l ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
+```
+
 If an error is found, we might want to do different things with it, depending on the value of the `apres` variable. We will now define a function `reply` which is in charge of doing a set of actions that are performed when `teishi.v` finds an error.
 
 ```javascript
       var reply = function (error) {
 ```
 
-If `apres` is `true`, we want to return an error message. Since the error is an array with strings, we join it into a string separated by spaces before returning it.
+If `apres` is `undefined` (the default case), we want to print the error through `teishi.l`. We append `'teishi.v'` as the first element of the error, so that it's considered as the label of the error message. We return the result of calling `teishi.l`, which is always `false`.
 
 ```javascript
-         if      (apres === true)                  return error.join (' ');
+         if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
 ```
 
-If `apres` is a function, we pass the error to it, taking care of first joining it into a string separated with spaces. Notice that we don't `return`.
+If `apres` is defined, we need to stringify the error, in case it contains arrays, objects, or other elements that can lose data when being coerced onto a string.
+
+We will now iterate through `error` (which is an array), stringify each of its elements (through `teishi.p` if the element is an object or array, and through string coercion otherwise), and join the resulting array with single spaces. We will set `error` to this string.
 
 ```javascript
-         else if (teishi.t (apres) === 'function') apres (error.join (' '));
+         error = dale.do (error, function (v) {
+            return teishi.complex (v) ? teishi.s (v) : v + '';
+         }).join (' ');
 ```
 
-If `apres` is `undefined` (the default case), we want to print the error through `teishi.l`. We append `'teishi.v'` as the first element of the error, so that it's considered as the label of the error message. Also notice that we don't `return` from this branch of the `if`.
+If `apres` is `true`, we will return the error message.
 
 ```javascript
-         else                                      teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
+         if (apres === true) return error;
 ```
 
-If we are here, it's because `apres` is either a function or `undefined`. We now return `false`.
+If we're here, it's because `apres` is a function. We pass the error to it, return `false`, and close the `reply` function.
+
+```javascript
+         apres (error);
          return false;
       }
 ```
