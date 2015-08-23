@@ -929,7 +929,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.1.1
+teishi - v3.1.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1652,6 +1652,12 @@ If we are here, at least one of the arguments is complex. If their type is diffe
 
 ```javascript
             if (teishi.t (a, true) !== teishi.t (b, true)) return false;
+```
+
+If `a` is a complex object that is also empty, and `b` is also empty, we will consider them equal, since we already know they have the same type.
+
+```javascript
+            if (dale.keys (a).length === 0 && dale.keys (b).length === 0) return true;
 ```
 
 We loop through the elements of `a`.

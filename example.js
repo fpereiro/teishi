@@ -1,5 +1,5 @@
 /*
-teishi - v3.1.1
+teishi - v3.1.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -443,6 +443,17 @@ Run the examples by either including the script in a webpage or by running `node
       invalid1: 'aaa',
       invalid2: /aaa/,
       valid: {a: 'aa'}
+   });
+
+   function example22 (input) {
+      return teishi.v (['input', input, [], teishi.test.equal]);
+   }
+
+   tester (example22, {
+      invalid1: ['a'],
+      invalid2: {foo: 'a'},
+      invalid3: {},
+      valid: []
    });
 
    teishi.l ('Finished', 'All tests ran successfully!');

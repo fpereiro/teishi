@@ -1,5 +1,5 @@
 /*
-teishi - v3.1.1
+teishi - v3.1.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -211,6 +211,7 @@ Please refer to readme.md to read the annotated source.
          return (function inner (a, b) {
             if (teishi.simple (a) && teishi.simple (b)) return a === b;
             if (teishi.t (a, true) !== teishi.t (b, true)) return false;
+            if (dale.keys (a).length === 0 && dale.keys (b).length === 0) return true;
             return dale.stopOn (a, false, function (v, k) {
                return inner (v, b [k]);
             });
