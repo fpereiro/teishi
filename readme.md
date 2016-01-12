@@ -929,7 +929,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.1.2
+teishi - v3.1.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1157,7 +1157,7 @@ We loop through the elements of `seen` and check if `v` (an array/object contain
 Notice that by adding the clause `k2 % 2 !== 0` we ignore the even elements of `seen`, which are only `path`s (instead of references to actual arrays or objects).
 
 ```javascript
-         var circular = dale.stopOnNot (seen, undefined, function (v2, k2) {
+         var circular = dale.stopNot (seen, undefined, function (v2, k2) {
             if (k2 % 2 !== 0 && v === v2) return seen [k2 - 1];
          });
 ```
@@ -1534,7 +1534,7 @@ If `clauses [1]` is not `undefined` and not an array, we wrap it in an array. We
       if (clauses [1] !== undefined) {
          if (teishi.t (clauses [1]) !== 'array') clauses [1] = [clauses [1]];
 
-         var clausesResult = dale.stopOnNot (clauses [1], true, function (v) {
+         var clausesResult = dale.stopNot (clauses [1], true, function (v) {
             var type = teishi.t (v);
             if (type === 'string' || type === 'function') return true;
             return teishi.l ('teishi.makeTest', 'Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', type);
@@ -1663,7 +1663,7 @@ If `a` is a complex object that is also empty, and `b` is also empty, we will co
 We loop through the elements of `a`.
 
 ```javascript
-            return dale.stopOn (a, false, function (v, k) {
+            return dale.stop (a, false, function (v, k) {
 ```
 
 Here `v` is a given element of `a`, and `k` is the key of that element (if `a` is an array, `k` will be a number, and if `a` is an object, `k` will be a string). We invoke `inner` recursively passing it `v` and `b [k]`, the latter being the corresponding element to `v` in `b`.
@@ -1691,7 +1691,7 @@ Although defining `simple` and `inner` outside of the test functions would elimi
          return ! (function inner (a, b) {
             if (teishi.simple (a) && teishi.simple (b)) return a === b;
             if (teishi.t (a) !== teishi.t (b)) return false;
-            return dale.stopOn (a, false, function (v, k) {
+            return dale.stop (a, false, function (v, k) {
                return inner (v, b [k]);
             });
          } (a, b))
@@ -1716,7 +1716,7 @@ If there are no conditions, we return `true`.
 We iterate through the keys of `b` and validate them.
 
 ```javascript
-         return dale.stopOnNot (b, true, function (v, k) {
+         return dale.stopNot (b, true, function (v, k) {
             if (k !== 'min' && k !== 'max' && k !== 'less' && k !== 'more') {
                return ['Range options must be one of "min", "max", "less" and "more", but instead is', k]
             }
@@ -1835,7 +1835,7 @@ We define two local variables `test` and `multi` to hold the values for the test
 We iterate through the fourth and fifth elements of the rule. If any of these iterations returns a value that is not `true`, the loop will be stopped and the last value returned will be stored in `result`.
 
 ```javascript
-      var result = dale.stopOnNot (rule.slice (3, 5), true, function (v, k) {
+      var result = dale.stopNot (rule.slice (3, 5), true, function (v, k) {
 ```
 
 We note the type of the element.
@@ -2042,7 +2042,7 @@ Nested rule: we iterate the `rule` and pass each of its elements to recursive ca
 If any of these calls returns `false`, the loop is stopped and `false` is returned. If all of these calls returned `true`, we return `true` as well.
 
 ```javascript
-         return dale.stopOnNot (rule, true, function (rule) {
+         return dale.stopNot (rule, true, function (rule) {
             return teishi.v (functionName, rule, apres);
          });
       }
@@ -2135,7 +2135,7 @@ The purpose of `eachValue` is to provide the test function with the original val
 If any of these tests returns something other than `true`, we stop the iteration and set result to that value. If every test returns `true`, we set result to `true`.
 
 ```javascript
-         result = dale.stopOnNot (rule [1], true, function (v) {
+         result = dale.stopNot (rule [1], true, function (v) {
             return test.apply (test, [functionName, names, v, rule [2], rule [1]]);
          });
       }
@@ -2156,7 +2156,7 @@ Notice also that we pass `undefined` as the `eachValue` and `to` as the `ofValue
 We store the result of this loop into `result`.
 
 ```javascript
-         result = dale.stopOn (rule [2], true, function (v) {
+         result = dale.stop (rule [2], true, function (v) {
             return test.apply (test, [functionName, names, rule [1], v, undefined, rule [2]]);
          });
       }
@@ -2171,8 +2171,8 @@ If we are here, `multi` equals `eachOf`. This is the last case.
 We iterate first through the elements of `compare` (like we did in `each` above), and stop whenever we find something that is **not** `true`. For each of the elements of `compare`, we iterate through the elements of `to`, and stop if any of the comparisons returns `true`.
 
 ```javascript
-         result = dale.stopOnNot (rule [1], true, function (v) {
-            return dale.stopOn (rule [2], true, function (v2) {
+         result = dale.stopNot (rule [1], true, function (v) {
+            return dale.stop (rule [2], true, function (v2) {
 ```
 
 We invoke the test function passing all six arguments, including the `eachValue` and `ofValue`.

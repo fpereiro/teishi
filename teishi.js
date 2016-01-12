@@ -1,5 +1,5 @@
 /*
-teishi - v3.1.2
+teishi - v3.1.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -66,7 +66,7 @@ Please refer to readme.md to read the annotated source.
 
       dale.do (input, function (v, k) {
          if (teishi.simple (v)) return output [k] = v;
-         var circular = dale.stopOnNot (seen, undefined, function (v2, k2) {
+         var circular = dale.stopNot (seen, undefined, function (v2, k2) {
             if (k2 % 2 !== 0 && v === v2) return seen [k2 - 1];
          });
          if (! circular) {
@@ -167,7 +167,7 @@ Please refer to readme.md to read the annotated source.
       if (clauses [1] !== undefined) {
          if (teishi.t (clauses [1]) !== 'array') clauses [1] = [clauses [1]];
 
-         var clausesResult = dale.stopOnNot (clauses [1], true, function (v) {
+         var clausesResult = dale.stopNot (clauses [1], true, function (v) {
             var type = teishi.t (v);
             if (type === 'string' || type === 'function') return true;
             return teishi.l ('teishi.makeTest', 'Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', type);
@@ -212,7 +212,7 @@ Please refer to readme.md to read the annotated source.
             if (teishi.simple (a) && teishi.simple (b)) return a === b;
             if (teishi.t (a, true) !== teishi.t (b, true)) return false;
             if (dale.keys (a).length === 0 && dale.keys (b).length === 0) return true;
-            return dale.stopOn (a, false, function (v, k) {
+            return dale.stop (a, false, function (v, k) {
                return inner (v, b [k]);
             });
          } (a, b))
@@ -222,7 +222,7 @@ Please refer to readme.md to read the annotated source.
          return ! (function inner (a, b) {
             if (teishi.simple (a) && teishi.simple (b)) return a === b;
             if (teishi.t (a, true) !== teishi.t (b, true)) return false;
-            return dale.stopOn (a, false, function (v, k) {
+            return dale.stop (a, false, function (v, k) {
                return inner (v, b [k]);
             });
          } (a, b))
@@ -233,7 +233,7 @@ Please refer to readme.md to read the annotated source.
             return ['Range options object must be an object but instead is', b, 'with type', teishi.t (b, true)];
          }
          if (teishi.s (b) === '{}') return true;
-         return dale.stopOnNot (b, true, function (v, k) {
+         return dale.stopNot (b, true, function (v, k) {
             if (k !== 'min' && k !== 'max' && k !== 'less' && k !== 'more') {
                return ['Range options must be one of "min", "max", "less" and "more", but instead is', k]
             }
@@ -275,7 +275,7 @@ Please refer to readme.md to read the annotated source.
 
       var test, multi;
 
-      var result = dale.stopOnNot (rule.slice (3, 5), true, function (v, k) {
+      var result = dale.stopNot (rule.slice (3, 5), true, function (v, k) {
          var type = teishi.t (v);
          if (type === 'string') {
             if (v !== 'oneOf' && v !== 'each' && v !== 'eachOf') return ['Invalid multi parameter', v, '. Valid multi parameters are', ['oneOf', 'each', 'eachOf']];
@@ -330,7 +330,7 @@ Please refer to readme.md to read the annotated source.
       }
 
       if (! (ruleFirstType === 'string' || (ruleFirstType === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) {
-         return dale.stopOnNot (rule, true, function (rule) {
+         return dale.stopNot (rule, true, function (rule) {
             return teishi.v (functionName, rule, apres);
          });
       }
@@ -360,20 +360,20 @@ Please refer to readme.md to read the annotated source.
       }
 
       else if (multi === 'each') {
-         result = dale.stopOnNot (rule [1], true, function (v) {
+         result = dale.stopNot (rule [1], true, function (v) {
             return test.apply (test, [functionName, names, v, rule [2], rule [1]]);
          });
       }
 
       else if (multi === 'oneOf') {
-         result = dale.stopOn (rule [2], true, function (v) {
+         result = dale.stop (rule [2], true, function (v) {
             return test.apply (test, [functionName, names, rule [1], v, undefined, rule [2]]);
          });
       }
 
       else {
-         result = dale.stopOnNot (rule [1], true, function (v) {
-            return dale.stopOn (rule [2], true, function (v2) {
+         result = dale.stopNot (rule [1], true, function (v) {
+            return dale.stop (rule [2], true, function (v2) {
                return test.apply (test, [functionName, names, v, v2, rule [1], rule [2]]);
             });
          });

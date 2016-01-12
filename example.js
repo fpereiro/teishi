@@ -1,5 +1,5 @@
 /*
-teishi - v3.1.2
+teishi - v3.1.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -16,7 +16,7 @@ Run the examples by either including the script in a webpage or by running `node
    var tester = function (fun, inputs) {
       var funame    = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$1');
       var arglength = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$2').split (',').length;
-      dale.stopOn (inputs, false, function (v, k) {
+      dale.stop (inputs, false, function (v, k) {
          var result = arglength < 2 ? fun.call (fun, v) : fun.apply (fun, v);
          var mismatch = (k.match (/^valid/) && result === false) || (k.match (/^invalid/) && result === true);
          teishi.l (funame + ':' + k, result);
@@ -410,7 +410,7 @@ Run the examples by either including the script in a webpage or by running `node
       if (teishi.v (metarule)) {
          if (teishi.t (rule) === 'array' && ! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) {
             // If the rule is an array and it is not a simple rule, we assume it is a nested rule!
-            return dale.stopOn (rule, false, function (v) {
+            return dale.stop (rule, false, function (v) {
                return validateTeishiRule (v);
             });
          }
