@@ -155,6 +155,13 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 <script src="teishi.js"></script>
 ```
 
+Or you can use these links to use the latest version - courtesy of [RawGit](https://rawgit.com) and [MaxCDN](https://maxcdn.com).
+
+```html
+<script src="https://cdn.rawgit.com/fpereiro/dale/01e0c514e9615d8d7adb60187cfdc702e06efd66/dale.js"></script>
+<script src=""></script>
+```
+
 And you also can use it in node.js. To install: `npm install teishi`
 
 ## Simple rules
