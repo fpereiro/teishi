@@ -158,7 +158,7 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 Or you can use these links to use the latest version - courtesy of [RawGit](https://rawgit.com) and [MaxCDN](https://maxcdn.com).
 
 ```html
-<script src="https://cdn.rawgit.com/fpereiro/dale/01e0c514e9615d8d7adb60187cfdc702e06efd66/dale.js"></script>
+<script src="https://cdn.rawgit.com/fpereiro/dale/81569fa1077d7641a216d987a7a95a7251c62b68/dale.js"></script>
 <script src="https://cdn.rawgit.com/fpereiro/teishi/198f2b8b5869bdc696acb02e55c85dfe40578c5f/teishi.js"></script>
 ```
 
@@ -936,7 +936,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.1.3
+teishi - v3.1.5
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
