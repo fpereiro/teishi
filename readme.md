@@ -936,7 +936,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.1.5
+teishi - v3.2.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1000,6 +1000,12 @@ We first apply `typeof` to `value`.
       if (type !== 'object' && type !== 'number') return type;
 ```
 
+If `value` fulfills the condition above, it is an array. Hence, we return `array`.
+
+```javascript
+      if (value instanceof Array) return 'array';
+```
+
 If `type` is `number`, we distinguish between `nan`, `infinity`, `integer` and `float`.
 
 ```javascript
@@ -1027,6 +1033,8 @@ Now, if `type` is `array`, `date` or `null`, we simply return the `type`. And if
       if (type === 'array' || type === 'date' || type === 'null') return type;
       if (type === 'regexp') return 'regex';
 ```
+
+You may ask: why did we check for `array`, if we already covered this case before? If an array is created in a [different frame](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Operators/instanceof), the `instanceof` check will fail, so the check above is a good fallback. The reason we use both checks is that the latter check is considerably slower than the `instanceof` check, so we use it as a failover.
 
 Now, if the function received a truthy second argument, we want to return the exact class name of this object. In that case, we return `type`. Otherwise, we just return `object`.
 
@@ -1571,7 +1579,7 @@ Notice there's no validation of the arguments in this function. This is for two 
 We create a local variable `result` where we store the result of applying the test to `compare` and `to`.
 
 ```javascript
-         var result = fun.apply (fun, [compare, to]);
+         var result = fun (compare, to);
 ```
 
 If the test was valid, we return `true`. If the test returned an array, it is an error. We return it, since we will let `teishi.v` and `teishi.stop` take care of it.
@@ -1590,23 +1598,22 @@ The block below, although tedious to read, is best explained by reading the code
 
          if (eachValue !== undefined)  error.push ('each of the');
          if (names [0])                error.push (names [0]);
-         if (functionName)             error = error.concat (['passed to', functionName]);
+         if (functionName)             error.push ('passed to', functionName);
                                        error.push (clauses [0]);
          if (ofValue !== undefined)    error.push ('one of');
-             ofValue !== undefined ?   error.push (ofValue) :      error.push (to);
+                                       error.push (ofValue !== undefined ? ofValue : to);
          if (names [1])                error.push ('(' + names [1] + ')');
-             eachValue !== undefined ? error.push ('but one of') : error.push ('but instead');
+                                       error.push (eachValue !== undefined ? 'but one of' : 'but instead');
          if (eachValue !== undefined)  error.push (eachValue);
-                                       error = error.concat (['is', compare]);
+                                       error.push ('is', compare);
 ```
 
 We add the elements of `finalClause` to the error. If any of them is a function, we invoke it passing `compare` and `to` as arguments, and use that result in the error message.
 
 ```javascript
-         error = error.concat (dale.do (clauses [1], function (v) {
-            if (teishi.t (v) !== 'function') return v;
-            else return v.apply (v, [compare, to]);
-         }));
+         dale.do (clauses [1], function (v) {
+            error.push (typeof v !== 'function' ? v : v (compare, to));
+         });
 ```
 
 We return the `error`.
@@ -1815,6 +1822,12 @@ We write an intricate conditional to check that whether the rule has a `names` a
 
 If we are here, we are dealing with a simple rule.
 
+If the rule has length 3, no `multi` or test function is present. We've already checked the three elements of the rule, so we return `true`.
+
+```javascript
+      if (rule.length === 3) return true;
+```
+
 We check that the rule has a length of three to five elements (`names`, `compare`, `to`, plus `multi`, the test function or both). If that's not the case, we return an error.
 
 ```javascript
@@ -1827,22 +1840,22 @@ Because we used the presence of a valid `names` element to check whether this ru
 
 We also don't need to do any checks on `compare` or `to`, since they can have any value.
 
-If the rule has length 3, no `multi` or test function is present. We've already checked the three elements of the rule, so we return `true`.
-
-```javascript
-      if (rule.length === 3) return true;
-```
-
 We define two local variables `test` and `multi` to hold the values for the test function and the `multi` parameter.
 
 ```javascript
       var test, multi;
 ```
 
-We iterate through the fourth and fifth elements of the rule. If any of these iterations returns a value that is not `true`, the loop will be stopped and the last value returned will be stored in `result`.
+We iterate through the rule, to validate its fourth and fifth elements of the rule. If any of these iterations returns a value that is not `true`, the loop will be stopped and the last value returned will be stored in `result`.
 
 ```javascript
-      var result = dale.stopNot (rule.slice (3, 5), true, function (v, k) {
+      var result = dale.stopNot (rule, true, function (v, k) {
+```
+
+If we're iterating through the first three elements, we ignore them.
+
+```javascript
+         if (k < 3) return true;
 ```
 
 We note the type of the element.
@@ -1904,6 +1917,42 @@ If we are here, no error were found within the current iteration. We return `tru
 
 In this section, we will define `teishi.v` and `teishi.stop`, the main functions of teishi.
 
+We will now define a function `reply` which is in charge of doing a set of actions that are performed when `teishi.v` finds an error. These actions will vary depending on the value of the `apres` variable passed to either `teishi.v` or `teishi.stop`.
+
+```javascript
+   var reply = function (error, apres) {
+```
+
+If `apres` is `undefined` (the default case), we want to print the error through `teishi.l`. We append `'teishi.v'` as the first element of the error, so that it's considered as the label of the error message. We return the result of calling `teishi.l`, which is always `false`.
+
+```javascript
+      if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
+```
+
+If `apres` is defined, we need to stringify the error, in case it contains arrays, objects, or other elements that can lose data when being coerced onto a string.
+
+We will now iterate through `error` (which is an array), stringify each of its elements (through `teishi.p` if the element is an object or array, and through string coercion otherwise), and join the resulting array with single spaces. We will set `error` to this string.
+
+```javascript
+      error = dale.do (error, function (v) {
+         return teishi.complex (v) ? teishi.s (v) : v + '';
+      }).join (' ');
+```
+
+If `apres` is `true`, we will return the error message.
+
+```javascript
+      if (apres === true) return error;
+```
+
+If we're here, it's because `apres` is a function. We pass the error to it, return `false`, and close the `reply` function.
+
+```javascript
+      apres (error);
+      return false;
+   }
+```
+
 `teishi.stop` is a very simple wrapper around `teishi.v`, so most of the action will revolve around `teishi.v`. Without further ado, we proceed to write this function.
 
 ```javascript
@@ -1938,42 +1987,6 @@ We validate `apres`: it must be either `undefined`, `true`, or a function. If it
       if (apres !== undefined && apres !== true && teishi.t (apres) !== 'function') return teishi.l ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 ```
 
-If an error is found, we might want to do different things with it, depending on the value of the `apres` variable. We will now define a function `reply` which is in charge of doing a set of actions that are performed when `teishi.v` finds an error.
-
-```javascript
-      var reply = function (error) {
-```
-
-If `apres` is `undefined` (the default case), we want to print the error through `teishi.l`. We append `'teishi.v'` as the first element of the error, so that it's considered as the label of the error message. We return the result of calling `teishi.l`, which is always `false`.
-
-```javascript
-         if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
-```
-
-If `apres` is defined, we need to stringify the error, in case it contains arrays, objects, or other elements that can lose data when being coerced onto a string.
-
-We will now iterate through `error` (which is an array), stringify each of its elements (through `teishi.p` if the element is an object or array, and through string coercion otherwise), and join the resulting array with single spaces. We will set `error` to this string.
-
-```javascript
-         error = dale.do (error, function (v) {
-            return teishi.complex (v) ? teishi.s (v) : v + '';
-         }).join (' ');
-```
-
-If `apres` is `true`, we will return the error message.
-
-```javascript
-         if (apres === true) return error;
-```
-
-If we're here, it's because `apres` is a function. We pass the error to it, return `false`, and close the `reply` function.
-
-```javascript
-         apres (error);
-         return false;
-      }
-```
-
 We invoke `teishi.ValidateRule` to check that `rule` is valid, and store the result in a local variable `validation`.
 
 ```javascript
@@ -1983,7 +1996,7 @@ We invoke `teishi.ValidateRule` to check that `rule` is valid, and store the res
 If `rule` is not well-formed, we pass the error to `reply` and `return`.
 
 ```javascript
-      if (validation !== true) return reply (validation);
+      if (validation !== true) return reply (validation, apres);
 ```
 
 We store the `type` of `rule` in a local variable `ruleType`.
@@ -2002,7 +2015,7 @@ Function guards: if `rule` is a function, we invoke the `rule` and pass it recur
 
 
 ```javascript
-      if (ruleType === 'function') return teishi.v (functionName, rule.call (rule), apres);
+      if (ruleType === 'function') return teishi.v (functionName, rule (), apres);
 ```
 
 If we are here, `rule` must be an array.
@@ -2091,12 +2104,18 @@ If `names` is a string, we wrap it in an array, since the test functions will be
       var names = ruleFirstType === 'array' ? rule [0] : [rule [0]];
 ```
 
+We note the types of `compare` and `to`.
+
+```javascript
+      var typeCompare = teishi.t (rule [1], true), typeTo = teishi.t (rule [2], true);
+```
+
 We deal with a special case of `multi`: if `multi` is either `each` or `eachOf`, and the `compare` field is either `undefined`, an empty array or an empty object, we deem that there are no elements inside `compare`.
 
 In the absence of elements to validate, we consider `rule` to be fulfilled, and return `true`.
 
 ```javascript
-      if ((multi === 'each' || multi === 'eachOf') && ((teishi.t (rule [1]) === 'array' && rule [1].length === 0) || (teishi.t (rule [1], true) === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
+      if ((multi === 'each' || multi === 'eachOf') && ((typeCompare === 'array' && rule [1].length === 0) || (typeCompare === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
          return true;
       }
 ```
@@ -2106,7 +2125,7 @@ We deal with the other special case of `multi`: if `multi` is either `oneOf` or 
 In the absence of elements to compare to, we consider `rule` to be impossible to be fulfilled. Hence, we set `result` to an error.
 
 ```javascript
-      if ((multi === 'oneOf' || multi === 'eachOf') && ((teishi.t (rule [2]) === 'array' && rule [2].length === 0) || (teishi.t (rule [2], true) === 'object' && Object.keys (rule [2]).length === 0) || rule [2] === undefined)) {
+      if ((multi === 'oneOf' || multi === 'eachOf') && ((typeTo === 'array' && rule [2].length === 0) || (typeTo === 'object' && Object.keys (rule [2]).length === 0) || rule [2] === undefined)) {
          result = ['To field of teishi rule is', rule.to, 'but multi attribute', multi, 'requires it to be non-empty, at teishi step', rule];
       }
 ```
@@ -2123,7 +2142,7 @@ Also notice that we use `else if` instead of `if`, because we are computing `res
 
 ```javascript
       else if (multi === undefined) {
-         result = test.apply (test, [functionName, names, rule [1], rule [2]]);
+         result = test (functionName, names, rule [1], rule [2]);
       }
 ```
 
@@ -2143,7 +2162,7 @@ If any of these tests returns something other than `true`, we stop the iteration
 
 ```javascript
          result = dale.stopNot (rule [1], true, function (v) {
-            return test.apply (test, [functionName, names, v, rule [2], rule [1]]);
+            return test (functionName, names, v, rule [2], rule [1]);
          });
       }
 ```
@@ -2164,7 +2183,7 @@ We store the result of this loop into `result`.
 
 ```javascript
          result = dale.stop (rule [2], true, function (v) {
-            return test.apply (test, [functionName, names, rule [1], v, undefined, rule [2]]);
+            return test (functionName, names, rule [1], v, undefined, rule [2]);
          });
       }
 ```
@@ -2185,7 +2204,7 @@ We iterate first through the elements of `compare` (like we did in `each` above)
 We invoke the test function passing all six arguments, including the `eachValue` and `ofValue`.
 
 ```javascript
-               return test.apply (test, [functionName, names, v, v2, rule [1], rule [2]]);
+               return test (functionName, names, v, v2, rule [1], rule [2]);
             });
          });
       }
@@ -2200,7 +2219,7 @@ If `result` is `true`, `rule` is valid. We return `true`.
 If `result` is not `true`, the `rule` is not fulfilled, hence `result` contains an error. We pass it to `reply`. We have nothing else to do, so we close the function.
 
 ```javascript
-      else return reply (result);
+      else return reply (result, apres);
    }
 ```
 

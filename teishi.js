@@ -1,5 +1,5 @@
 /*
-teishi - v3.1.5
+teishi - v3.2.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -22,6 +22,7 @@ Please refer to readme.md to read the annotated source.
    teishi.t = function (value, objectType) {
       var type = typeof value;
       if (type !== 'object' && type !== 'number') return type;
+      if (value instanceof Array) return 'array';
       if (type === 'number') {
          if      (isNaN (value))      return 'nan';
          else if (! isFinite (value)) return 'infinity';
@@ -176,26 +177,26 @@ Please refer to readme.md to read the annotated source.
       }
 
       return function (functionName, names, compare, to, eachValue, ofValue) {
-         var result = fun.apply (fun, [compare, to]);
+         var result = fun (compare, to);
          if (result === true) return true;
          if (teishi.t (result) === 'array') return result;
+
          var error = [];
 
          if (eachValue !== undefined)  error.push ('each of the');
          if (names [0])                error.push (names [0]);
-         if (functionName)             error = error.concat (['passed to', functionName]);
+         if (functionName)             error.push ('passed to', functionName);
                                        error.push (clauses [0]);
          if (ofValue !== undefined)    error.push ('one of');
-             ofValue !== undefined ?   error.push (ofValue) :      error.push (to);
+                                       error.push (ofValue !== undefined ? ofValue : to);
          if (names [1])                error.push ('(' + names [1] + ')');
-             eachValue !== undefined ? error.push ('but one of') : error.push ('but instead');
+                                       error.push (eachValue !== undefined ? 'but one of' : 'but instead');
          if (eachValue !== undefined)  error.push (eachValue);
-                                       error = error.concat (['is', compare]);
+                                       error.push ('is', compare);
 
-         error = error.concat (dale.do (clauses [1], function (v) {
-            if (teishi.t (v) !== 'function') return v;
-            else return v.apply (v, [compare, to]);
-         }));
+         dale.do (clauses [1], function (v) {
+            error.push (typeof v !== 'function' ? v : v (compare, to));
+         });
          return error;
       }
    }
@@ -267,15 +268,16 @@ Please refer to readme.md to read the annotated source.
 
       if (! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
 
+      if (rule.length === 3) return true;
+
       if (rule.length < 3 || rule.length > 5) {
          return ['Each teishi simple rule must be an array of length between 3 and 5, but instead is', rule, 'and has length', rule.length];
       }
 
-      if (rule.length === 3) return true;
-
       var test, multi;
 
-      var result = dale.stopNot (rule.slice (3, 5), true, function (v, k) {
+      var result = dale.stopNot (rule, true, function (v, k) {
+         if (k < 3) return true;
          var type = teishi.t (v);
          if (type === 'string') {
             if (v !== 'oneOf' && v !== 'each' && v !== 'eachOf') return ['Invalid multi parameter', v, '. Valid multi parameters are', ['oneOf', 'each', 'eachOf']];
@@ -295,6 +297,16 @@ Please refer to readme.md to read the annotated source.
 
    // *** THE MAIN FUNCTIONS ***
 
+   var reply = function (error, apres) {
+      if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
+      error = dale.do (error, function (v) {
+         return teishi.complex (v) ? teishi.s (v) : v + '';
+      }).join (' ');
+      if (apres === true) return error;
+      apres (error);
+      return false;
+   }
+
    teishi.v = function () {
 
       var arg = 0;
@@ -304,22 +316,13 @@ Please refer to readme.md to read the annotated source.
 
       if (apres !== undefined && apres !== true && teishi.t (apres) !== 'function') return teishi.l ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 
-      var reply = function (error) {
-         if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
-         error = dale.do (error, function (v) {
-            return teishi.complex (v) ? teishi.s (v) : v + '';
-         }).join (' ');
-         if (apres === true) return error;
-         apres (error);
-         return false;
-      }
 
       var validation = teishi.validateRule (rule);
-      if (validation !== true) return reply (validation);
+      if (validation !== true) return reply (validation, apres);
 
       var ruleType = teishi.t (rule);
       if (ruleType === 'boolean')  return rule;
-      if (ruleType === 'function') return teishi.v (functionName, rule.call (rule), apres);
+      if (ruleType === 'function') return teishi.v (functionName, rule (), apres);
 
       if (rule.length === 0) return true;
 
@@ -338,7 +341,8 @@ Please refer to readme.md to read the annotated source.
       var test = teishi.test.type;
       var multi;
 
-      dale.do (rule.splice (3, 5), function (v) {
+      dale.do (rule, function (v, k) {
+         if (k < 3) return;
          var type = teishi.t (v);
          if (type === 'string')   multi = v;
          if (type === 'function') test  = v;
@@ -346,41 +350,42 @@ Please refer to readme.md to read the annotated source.
 
       var result;
       var names = ruleFirstType === 'array' ? rule [0] : [rule [0]];
+      var typeCompare = teishi.t (rule [1], true), typeTo = teishi.t (rule [2], true);
 
-      if ((multi === 'each' || multi === 'eachOf') && ((teishi.t (rule [1]) === 'array' && rule [1].length === 0) || (teishi.t (rule [1], true) === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
+      if ((multi === 'each' || multi === 'eachOf') && ((typeCompare === 'array' && rule [1].length === 0) || (typeCompare === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
          return true;
       }
 
-      if ((multi === 'oneOf' || multi === 'eachOf') && ((teishi.t (rule [2]) === 'array' && rule [2].length === 0) || (teishi.t (rule [2], true) === 'object' && Object.keys (rule [2]).length === 0) || rule [2] === undefined)) {
+      if ((multi === 'oneOf' || multi === 'eachOf') && ((typeTo === 'array' && rule [2].length === 0) || (typeTo === 'object' && Object.keys (rule [2]).length === 0) || rule [2] === undefined)) {
          result = ['To field of teishi rule is', rule.to, 'but multi attribute', multi, 'requires it to be non-empty, at teishi step', rule];
       }
 
       else if (multi === undefined) {
-         result = test.apply (test, [functionName, names, rule [1], rule [2]]);
+         result = test (functionName, names, rule [1], rule [2]);
       }
 
       else if (multi === 'each') {
          result = dale.stopNot (rule [1], true, function (v) {
-            return test.apply (test, [functionName, names, v, rule [2], rule [1]]);
+            return test (functionName, names, v, rule [2], rule [1]);
          });
       }
 
       else if (multi === 'oneOf') {
          result = dale.stop (rule [2], true, function (v) {
-            return test.apply (test, [functionName, names, rule [1], v, undefined, rule [2]]);
+            return test (functionName, names, rule [1], v, undefined, rule [2]);
          });
       }
 
       else {
          result = dale.stopNot (rule [1], true, function (v) {
             return dale.stop (rule [2], true, function (v2) {
-               return test.apply (test, [functionName, names, v, v2, rule [1], rule [2]]);
+               return test (functionName, names, v, v2, rule [1], rule [2]);
             });
          });
       }
 
       if (result === true) return true;
-      else return reply (result);
+      else return reply (result, apres);
    }
 
    teishi.stop = function () {

@@ -1,5 +1,5 @@
 /*
-teishi - v3.1.5
+teishi - v3.2.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -456,6 +456,11 @@ Run the examples by either including the script in a webpage or by running `node
       valid: []
    });
 
-   teishi.l ('Finished', 'All tests ran successfully!');
+   teishi.v ('Check', [
+      ['aaa', 1, 'string']
+   ], function (error) {
+      if (error) teishi.l ('Finished', 'All tests ran successfully!');
+      else       teishi.l ('There was an error with the apres function!');
+   });
 
 }) ();
