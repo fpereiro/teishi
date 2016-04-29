@@ -1,5 +1,5 @@
 /*
-teishi - v3.2.0
+teishi - v3.2.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -181,21 +181,21 @@ Please refer to readme.md to read the annotated source.
          if (result === true) return true;
          if (teishi.t (result) === 'array') return result;
 
-         var error = [];
-
-         if (eachValue !== undefined)  error.push ('each of the');
-         if (names [0])                error.push (names [0]);
-         if (functionName)             error.push ('passed to', functionName);
-                                       error.push (clauses [0]);
-         if (ofValue !== undefined)    error.push ('one of');
-                                       error.push (ofValue !== undefined ? ofValue : to);
-         if (names [1])                error.push ('(' + names [1] + ')');
-                                       error.push (eachValue !== undefined ? 'but one of' : 'but instead');
-         if (eachValue !== undefined)  error.push (eachValue);
-                                       error.push ('is', compare);
+         var error = [], index = 0;
+         if (eachValue !== undefined)  error [index++] = 'each of the';
+         if (names [0])                error [index++] = names [0];
+         if (functionName)             error [index++] = 'passed to', error [index++] = functionName;
+                                       error [index++] = clauses [0];
+         if (ofValue !== undefined)    error [index++] = 'one of';
+                                       error [index++] = ofValue !== undefined ? ofValue : to;
+         if (names [1])                error [index++] = '(' + names [1] + ')';
+                                       error [index++] = eachValue !== undefined ? 'but one of' : 'but instead';
+         if (eachValue !== undefined)  error [index++] = eachValue;
+                                       error [index++] = 'is';
+                                       error [index++] = compare;
 
          dale.do (clauses [1], function (v) {
-            error.push (typeof v !== 'function' ? v : v (compare, to));
+            error [index++] = typeof v !== 'function' ? v : v (compare, to);
          });
          return error;
       }
@@ -307,12 +307,10 @@ Please refer to readme.md to read the annotated source.
       return false;
    }
 
-   teishi.v = function () {
+   teishi.v = function (first, second, third) {
 
-      var arg = 0;
-      var functionName = teishi.t (arguments [arg]) === 'string' ? arguments [arg++] : '';
-      var rule         = arguments [arg++];
-      var apres        = arguments [arg];
+      if (teishi.t (first) === 'string') var functionName = first, rule = second, apres = third;
+      else                               var functionName = '',    rule = first,  apres = second;
 
       if (apres !== undefined && apres !== true && teishi.t (apres) !== 'function') return teishi.l ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 

@@ -936,7 +936,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.2.0
+teishi - v3.2.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1593,26 +1593,28 @@ If we are here, `result` is equal to `false`. We found a validation error! Below
 
 The block below, although tedious to read, is best explained by reading the code in detail. By adding these elements in order, we will have a specific error message, built from generic blocks.
 
-```javascript
-         var error = [];
+Earlier versions of the library pushed the chunks of the error message into `error`. However, for performance reasons (because this function is executed every time an error is encountered and hence can be considered as part of the "inner loop" of teishi), we have opted to create an `index` variable and use it to append elements to `error`.
 
-         if (eachValue !== undefined)  error.push ('each of the');
-         if (names [0])                error.push (names [0]);
-         if (functionName)             error.push ('passed to', functionName);
-                                       error.push (clauses [0]);
-         if (ofValue !== undefined)    error.push ('one of');
-                                       error.push (ofValue !== undefined ? ofValue : to);
-         if (names [1])                error.push ('(' + names [1] + ')');
-                                       error.push (eachValue !== undefined ? 'but one of' : 'but instead');
-         if (eachValue !== undefined)  error.push (eachValue);
-                                       error.push ('is', compare);
+```javascript
+         var error = [], index = 0;
+         if (eachValue !== undefined)  error [index++] = 'each of the';
+         if (names [0])                error [index++] = names [0];
+         if (functionName)             error [index++] = 'passed to', error [index++] = functionName;
+                                       error [index++] = clauses [0];
+         if (ofValue !== undefined)    error [index++] = 'one of';
+                                       error [index++] = ofValue !== undefined ? ofValue : to;
+         if (names [1])                error [index++] = '(' + names [1] + ')';
+                                       error [index++] = eachValue !== undefined ? 'but one of' : 'but instead';
+         if (eachValue !== undefined)  error [index++] = eachValue;
+                                       error [index++] = 'is';
+                                       error [index++] = compare;
 ```
 
 We add the elements of `finalClause` to the error. If any of them is a function, we invoke it passing `compare` and `to` as arguments, and use that result in the error message.
 
 ```javascript
          dale.do (clauses [1], function (v) {
-            error.push (typeof v !== 'function' ? v : v (compare, to));
+            error [index++] = typeof v !== 'function' ? v : v (compare, to);
          });
 ```
 
@@ -1956,27 +1958,20 @@ If we're here, it's because `apres` is a function. We pass the error to it, retu
 `teishi.stop` is a very simple wrapper around `teishi.v`, so most of the action will revolve around `teishi.v`. Without further ado, we proceed to write this function.
 
 ```javascript
-   teishi.v = function () {
+   teishi.v = function (first, second, third) {
 ```
 
 The only required argument to `teishi.v` is `rule`, which can be either the first or the second argument. `rule` will be the second argument only if `functionName` is passed.
 
 Since a `rule` can never be a string, and `functionName` always has to be a string, we decide that `functionName` is present if the first argument of the function is a string.
 
-A subtle point: we set `functionName` to an empty string, instead of `undefined`. This is because, for recursive function calls, we want to have a fixed number of arguments, so as to simplify writing the recursive calls.
-
-```javascript
-      var arg = 0;
-      var functionName = teishi.t (arguments [arg]) === 'string' ? arguments [arg++] : '';
-      var rule         = arguments [arg++];
-```
-
-Notice that we use the variable `arg` to count the number of arguments that have already been identified. If `functionName` turns out not to be present, `arg` will still be `0` and hence we will consider `rule` to be the first argument.
-
 We set `apres` to be the argument that was passed after `rule`. If no argument was passed, it will be `undefined`.
 
+A subtle point: we set `functionName` to an empty string, instead of `undefined`. This is because, for recursive function calls, we want to have a fixed number of arguments, so as to simplify writing the recursive calls. This also improves the performance of the function.
+
 ```javascript
-      var apres        = arguments [arg];
+      if (teishi.t (first) === 'string') var functionName = first, rule = second, apres = third;
+      else                               var functionName = '',    rule = first,  apres = second;
 ```
 
 Because we assume that `functionName` is defined only if the first argument is a string (and set its value to an empty string otherwise), `functionName` will be a string, so we don't need to validate it. This is similar to what happened with the validation-through-assumption of `names` we did in `teishi.validateRule`.

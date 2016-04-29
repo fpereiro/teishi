@@ -1,9 +1,9 @@
 {
    "name": "teishi",
-   "version": "3.2.0",
+   "version": "3.2.1",
    "description": "Tool for validating the input of functions.",
    "dependencies": {
-      "dale": "3.2.0"
+      "dale": "3.2.1"
    },
    "main": "teishi.js",
    "author": "Federico Pereiro <fpereiro@gmail.com>",
