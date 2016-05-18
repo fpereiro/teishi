@@ -477,7 +477,8 @@ Run the examples by either including the script in a webpage or by running `node
       hello: 'there',
       otra: 'mas',
       fun: fun,
-      other: true
+      other: true,
+      buffer: new Buffer ('hello there', 'utf8'),
    }, [/a/, /b/, {a: 'aa'}, [some, fun], 'c'], 'yep']]);
 
    teishi.v ('Check', [
