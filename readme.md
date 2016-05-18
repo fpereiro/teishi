@@ -158,8 +158,8 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 Or you can use these links to use the latest version - courtesy of [RawGit](https://rawgit.com) and [MaxCDN](https://maxcdn.com).
 
 ```html
-<script src="https://cdn.rawgit.com/fpereiro/dale/2208a574ac37037575ae0ee4260b1b0c5062eede/dale.js"></script>
-<script src="https://cdn.rawgit.com/fpereiro/teishi/ac4fb7f946f11a8fdc24db64bb5ff55b26adeba0/teishi.js"></script>
+<script src="https://cdn.rawgit.com/fpereiro/dale/6360fc6ee346d519202246f586947bafd7960d83/dale.js"></script>
+<script src=""></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -930,13 +930,13 @@ For more information, please refer to the annotated source code below, where I d
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 390 lines long.
+The complete source code is contained in `teishi.js`. It is about 400 lines long.
 
 Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.3.0
+teishi - v3.4.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -946,7 +946,7 @@ Please refer to readme.md to read the annotated source.
 
 ### Setup
 
-We wrap the entire file in a self-executing lambda function. This practice is usually named *the javascript module pattern*. The purpose of it is to wrap our code in a closure and hence avoid making our local variables exceed their scope, as well as avoiding unwanted references to local variables from other scripts.
+We wrap the entire file in a self-executing anonymous function. This practice is commonly named [the javascript module pattern](http://yuiblog.com/blog/2007/06/12/module-pattern/). The purpose of it is to wrap our code in a closure and hence avoid making the local variables we define here to be available outside of this module. A cursory test indicates that local variables exceed the scope of a file in the browser, but not in node.js. Globals exceed their scope despite this pattern - but we won't be using them.
 
 ```javascript
 (function () {
@@ -1251,39 +1251,24 @@ We define `teishi.time`, which will return the current date in milliseconds.
    teishi.time = function () {return Date.now ()}
 ```
 
-We define `ms`, a local variable that holds the current date measured in milliseconds. This will be useful for `teishi.l`, which will be defined below.
+We define three local variables useful for `teishi.l`, defined below:
+
+- `ms`, a variable that holds the current date measured in milliseconds. This will be useful as a sort of *time zero*.
+- `lastColor`, a variable that holds the last ansi color used, so that it is not repeated twice in a row.
+- `ansi`, an object with several defaults for printing color to the console.
 
 ```javascript
-   var ms = teishi.time ();
+   var ms = teishi.time (), lastColor, ansi = {
 ```
 
-We will now define `teishi.l` which is teishi's wrapper for console.log. The improvements are:
-- Colors.
-- Unlimited expansion of nested arrays and objects.
-- Time offset for profiling purposes.
-- More compact indentation/newline rules for printing nested objects.
-- Stringify functions and print their first 150 characters.
+The magic of `teishi.l`'s colors is done through [ANSI escape codes](http://en.wikipedia.org/wiki/ANSI_escape_code). We will define a local object `ansi` which will contain four functions.
+
+`ansi.bold` will bold the text after it, `ansi.end` will remove all format from the text after it and `ansi.white` will make white the text after it. We define them to be functions instead of constants because this will enable an invocation to `teishi.lno` (defined below) to turn off formatting.
 
 ```javascript
-   teishi.l = function () {
-```
-
-We define a local variables:
-- `lastColor` will hold the last color used to paint a string of text, to avoid the same color being used to paint adjacent sections of text.
-
-```javascript
-      var lastColor;
-```
-
-The magic of `teishi.l`'s colors is done through [ANSI escape codes](http://en.wikipedia.org/wiki/ANSI_escape_code). We will define a local object `ansi` which will contain three constants and two functions.
-
-`ansi.bold` will bold the text after it, `ansi.end` will remove all format from the text after it and `ansi.white` will make white the text after it.
-
-```javascript
-      var ansi = {
-         end:   isNode ? '\033[0m'  : '',
-         bold:  isNode ? '\033[1m'  : '',
-         white: isNode ? '\033[37m' : '',
+      end:   function () {return isNode ? '\033[0m'  : ''},
+      bold:  function () {return isNode ? '\033[1m'  : ''},
+      white: function () {return isNode ? '\033[37m' : ''},
 ```
 
 Notice that if we are in the browser, all of these variables will contain an empty string.
@@ -1293,124 +1278,178 @@ We will use six colors in teishi: red, green, yellow, blue, magenta and cyan. We
 `ansi.color` is the function that will return the ANSI codes for coloring text using one of the six colors above, chosen randomly. If the function receives `true` as its argument, it will return a code for coloring the *background* of the text, which is useful for the `label`.
 
 ```javascript
-         color: function (reverse) {
+      color: function (reverse) {
 ```
 
 If we are in the browser, we return an empty string.
 
 ```javascript
-            if (! isNode) return '';
+         if (! isNode) return '';
 ```
 
 We set a local variable `color` to the value of `lastColor`. We then set it to a number between 1 and 6, until it's different from `lastColor`. We then set `lastColor` to `color`. The purpose of this sequence is to ensure that `lastColor` changes to a new value between 1 and 6.
 
 ```javascript
-            var color = lastColor;
-            while (lastColor === color) color = Math.round (Math.random () * 5 + 1);
-            lastColor = color;
+         var color = lastColor;
+         while (lastColor === color) color = Math.round (Math.random () * 5 + 1);
+         lastColor = color;
 ```
 
 We return the corresponding ANSI codes for coloring either text or background, depending on whether `reverse` is set or not.
 
 ```javascript
-            return '\033[' + (reverse ? '4' : '3') + color + 'm';
-         }
+         return '\033[' + (reverse ? '4' : '3') + color + 'm';
       }
+   }
 ```
 
-We define a local variable `indent`, a string that will hold the current level of indentation of nested objects.
+We will now define `teishi.l` which is teishi's wrapper for console.log. The improvements are:
+- Colors.
+- Unlimited expansion of nested arrays and objects.
+- Time offset for profiling purposes.
+- More compact indentation/newline rules for printing nested objects.
+- Stringify functions and print their first 150 characters only.
 
 ```javascript
-      var indent = '';
+   teishi.l = function () {
+```
+
+We define `output`, a string where we will append all the formatted text we want to print. We will initialize it to `ansi.bold`.
+
+```javascript
+      var output = ansi.bold ();
 ```
 
 We define a function `inner` that we will apply recursively to the `arguments`. The reason for writing a function here is that we want to recurse over complex elements, such as arrays and objects.
 
-The function takes two arguments: `value`, the value to be printed, and `recursive`, a value that indicates the level of nestedness of the element being printed.
+Notice the parenthesis before the function definition - we place it because this is a function expression, which allows for a named, recursive, and immediately executed function.
+
+The function takes two arguments: `input`, the input to be printed, and `depth`, a numeric value that indicates the level of nestedness of the element being printed.
 
 ```javascript
-      var inner = function (value, recursive) {
+      (function inner (input, depth) {
 ```
 
-We will store the output of `inner` in a local variable `output`. We initialize it to `ansi.bold`, since we want all the output to have a bolded font.
+We detect the type of `input` and store it in a local variable `inputType`. We also initialize `depth` to 0, if it is undefined. Finally, we initialize `first` to `true`; this variable will be useful to see if we're processing the `first` element of a complex element.
 
 ```javascript
-         var output = ansi.bold;
+         var inputType = teishi.t (input), depth = depth || 0, first = true;
 ```
 
-We detect the type of `value` and store it in a local variable `typeValue`. If `value` is an `arguments` pseudo-array, we will set `typeValue` to `'array'`.
+If `input` is an `arguments` pseudo-array, we will set `inputType` to `'array'`.
 
 ```javascript
-         var typeValue = teishi.t (value);
-         if (typeValue === 'object' && teishi.t (value, true) === 'arguments') typeValue = 'array';
+         if (inputType === 'object' && Object.prototype.toString.call (input) === '[object Arguments]') inputType = 'array';
 ```
 
-We define a flag `complex`, that will indicate us when we need to place opening and closing braces. This will be the case when `value` is an array/object and we're in a recursive call to `inner`.
+We define a local variable `indent`. If `depth` is less than 2, we don't want to indent anything, so we will set it to an empty string. Otherwise, we will set it to be a newline (`\n`) followed by (depth - 1) * 3 spaces (for example, if `depth` is 2, then `indent` will have 3 spaces).
 
 ```javascript
-         var complex = (typeValue === 'array' || typeValue === 'object') && recursive > 0;
+         var indent = depth < 2 ? '' : '\n' + dale.times (depth - 1, 'do', function (v) {return '   '}).join ('');
 ```
 
-Why do we ignore the first, non-recursive call to `inner`? Well, when `inner` is first invoked, it actually receives the `arguments` object that `teishi.l` received in the first place. In this case, we don't want to place opening/closing braces, since otherwise every invocation to `teishi.l` would be printed as an array.
-
-We now place the braces if `complex` is `true`. Notice that we also add `ansi.white`, so that the braces will be always printed in white font.
+If `depth` is larger than 0, we add an opening `[` or `{`, depending on whether `inputType` is `array` or `object`. Notice that this assumes that `inputType` is always either of these. Because of how we invoke this function the first time, and how we invoke it recursively, this will always be the case.
 
 ```javascript
-         if (complex) output += ansi.white + (typeValue === 'array' ? '[' : '{');
-```
-
-When `recursive` is more than two and `value` is not empty, we will do two things related to indentation:
-
-- Increase `indent` by three spaces.
-- Append a newline plus `indent` to `output`.
-
-As we apply indentation and newlines only when `recursive` is greater `2` (instead of greater than `0` or `1`), we achieve more compactness, because we will only use indentation and newlines only if an object is nested more than twice deep. With objects/arrays that are less nested, we will print it in the same line.
-
-```javascript
-         if (recursive > 2 && dale.keys (value).length > 0) {
-            indent += '   ';
-            output += '\n' + indent;
+         if (depth > 0) {
+            if (inputType === 'array')  output += ansi.white () + '[';
+            else                        output += ansi.white () + '{';
          }
 ```
 
-We now will iterate over the items of `value`, whether it's a simple or complex element. We will append the result of this iteration to `output`.
+We now will iterate over the items of `input`.
 
 ```javascript
-         output += dale.do (value, function (v, k) {
+         dale.do (input, function (v, k) {
 ```
 
-For every item in `value`, we'll note its type.
+For every item in `output`, we'll note its type.
 
 ```javascript
             var typeV = teishi.t (v);
 ```
 
-If a) we are in a non-recursive (initial) call to `inner`, b) we are iterating the first element of `value`, c) this element is either a string or an integer, and d) there's more than one element in value, we'll consider this element to be a **label**. Hence, we will apply a special background color to it, place a trailing colon and space, an ansi color codes to remove the background color and return the whole string.
+If a) we are in a non-recursive (initial) call to `inner`, b) we are iterating the first element of `input` and c) this element is either a string or an integer, we'll consider this element to be a **label**. Hence, we will:
+
+- Apply a special background color to it.
+- Place a trailing colon and ansi color codes to remove the background color and then set again the bold font.
+- Concatenate it to `output`.
+- Set `first` to `true`.
+- Exit this iteration (with `return`) since there's nothing else to do with this element.
 
 In this case, we will return the label.
 
 ```javascript
-            if (recursive === 0 && k === 0 && (typeV === 'string' || typeV === 'integer') && value.length > 1) {
-               return ansi.bold + ansi.color (true) + v + ':' + ansi.end + ansi.bold;
+            if (depth === 0 && k === 0 && (typeV === 'string' || typeV === 'integer')) {
+               first = false;
+               return output += ansi.color (true) + v + ':' + ansi.end () + ansi.bold ();
             }
+```
+
+If this element is not the first one, we will concatenate either a space or a comma plus space, depending on whether `depth` is 0 or more. This is to separate contiguous elements within a complex structure. In every case, we set `first` to `false`, to mark that we have already seen the first element.
+
+```javascript
+            if (! first) output += ansi.white () + (depth === 0 ? ' ' : ', ');
+            first = false;
 ```
 
 If the element being iterated is a string and we are in a recursive call to `inner`, we surround the element with single quotes. If we did this on the initial call to `inner`, the output of `teishi.l ('Hey', 'there')` would be `'Hey', 'there'`, whereas what we want is to get `Hey there`. Another way of seeing this is that we treat differently strings that are within objects or arrays.
 
 ```javascript
-            if (type === 'string' && recursive) v = "'" + v + "'";
+            if (typeV === 'string' && depth > 0) v = "'" + v + "'";
 ```
 
-If the element being iterated is a function and the stringified function is more than 150 characters long, we will slice the stringified function and append ellipsis to it.
+If the element being iterated is a function we will do a few modifications to the value before concatenating it:
 
 ```javascript
-            if (typeV === 'function' && (v + '').length > 150) v = (v + '').replace (/\n/g, '\n' + indent).slice (0, 150) + '...';
+            if (typeV === 'function') {
 ```
 
-We create a variable `innerOutput` to hold the output for the element being processed in the current iteration of the loop. We will initialize it to `ansi.color ()`, since we want this item to have its distinct color.
+We will convert the function to a string.
 
 ```javascript
-            var innerOutput = ansi.color ();
+               v = v + '';
+```
+
+We will define `baseIndent` as the amount of space between the beginning of the last line and the last closing curly bracket of the function. We will then replace this space in the function with a single newline. Since `baseIndent` already includes a newline (because `\s` matches a newline as well), this will have the result of removing the base indent of the function.
+
+```javascript
+               var baseIndent = v.match (/\s+(?=}$)/);
+               if (baseIndent !== null) v = v.replace (new RegExp (baseIndent [0], 'g'), '\n');
+```
+
+Then, if it's length is more than 150 characters, we will slice it and then append ellipsis to it, plus a newline.
+
+```javascript
+               if (v.length > 150) v = v.slice (0, 150) + '...\n';
+```
+
+Finally, if `depth` is more than 1, we will add `indent` to the beginning of each line. In the case where `input` is an object, however, we will add a few more whitespaces to `indent`, exactly as many as the key length plus two, so that functions are alignedP
+
+```javascript
+
+// Without extra space:
+fun: function () {
+   // something
+}
+
+// With extra space:
+fun: function () {
+        // something
+     }
+```
+
+Here's the code that adds `indent` to each line:
+
+```javascript
+               if (depth > 1) v = v.replace (/\n/g, inputType === 'array' ? indent : ('\n' + (k + ': ').replace (/./g, ' ') + indent.slice (1)));
+            }
+```
+
+We now append an invocation of `ansi.color` to output, to set the color that we will use for this particular element.
+
+```javascript
+            output += ansi.color ();
 ```
 
 If the element being iterated is an object, we also want to print its key `k`, using the format `key: value`.
@@ -1431,67 +1470,51 @@ Now, in javascript, the key of an object can be any string, but if you use a key
 }
 ```
 
-Hence, if the element is an object, we will append to `innerOutput` the key, surrounding it with quotes if it is non-alphanumeric, and appending a colon and a space.
+Hence, if the element is an object, we will append to `output` the `indent` and also the key, surrounding it with quotes if it is non-alphanumeric, and appending a colon and a space.
 
 ```javascript
-            if (typeValue === 'object') innerOutput += (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ';
+            if (inputType === 'object') output += indent + (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ';
 ```
 
-We will now return `innerOutput`, but after appending it with one of the following:
-
-- If the element is an array or object: we invoke `inner` with the element as the `value` and an incremented `recursive` argument, and append the result of this call.
-- If it's not an array or object: we'll simply append the element itself.
+Now, if the element we're currently inspecting is also a complex entity, we will do a recursive call to `inner`, taking care to increase `depth` by 1.
 
 ```javascript
-            return innerOutput + ((typeV === 'array' || typeV === 'object') ? inner (v, recursive + 1) : v) + ansi.white;
+            if (typeV === 'array' || typeV === 'object') inner (v, depth + 1);
 ```
 
-Notice that we also add `ansi.white` at the end of the element, to avoid consecutive elements being colored with the same color.
+Otherwise, we add `v` to `output`. If we're adding an element that belongs to an `object`, `indent` will be already placed (along with `k`) - this means we'll only need to place `indent` in the case where `inputType` is `array`.
 
-Before returning the result of the `dale.do` loop, we join this result with either a comma and a space (`, `) or a single space, depending on whether we are on the initial call to `inner` or not.
-
-We then close the loop function, since there's nothing else to do with the contents of `value`.
+After this, we're done with the subelements of `input`.
 
 ```javascript
-         }).join (recursive === 0 ? ' ' : ', ');
-      }
+            else output += inputType === 'object' ? v : indent + v;
+         });
 ```
 
-This section is a mirror of the operations we did just before iterating the elements of `value`:
-- If needed, we restore `indent` to its previous length, and also add a new line plus indentation to `output`.
-- If needed, we place the closing braces of the element.
+If `depth` is larger than `0`, we place the closing square or curly brackets, depending on `inputType`. Notice we also place the right amount of indentation and the ansi code for white text.
 
 ```javascript
-         if (recursive > 2 && dale.keys (value).length > 0) {
-            indent = indent.slice (0, -3);
-            output += '\n' + indent;
+         if (depth > 0) {
+            if (inputType === 'array')  output += (depth > 1 ? '\n' : '') + indent.slice (4) + ansi.white () + ']';
+            if (inputType === 'object') output += (depth > 1 ? '\n' : '') + indent.slice (4) + ansi.white () + '}';
          }
-         if (complex) output += typeValue === 'array' ? ']' : '}';
 ```
 
-There's nothing left to do in `inner`, so we return `output` and close the funcdtion.
+We close `inner` and we immediately execute it, passing `arguments` as its first element. This means that the case where `depth` equals 0 will be when we pass `arguments`, which we interpret to be an array. Since `inner` is only called on complex objects, this is how we assure that `inputType` will always be an array or object.
 
 ```javascript
-         return output;
-      }
+      }) (arguments);
 ```
 
-Here, we first copy the `arguments` into an array. We then pass that array to `teishi.c`, which will return a copy that will eliminate all circular references. We then pass that array to `inner`, and store the result in a local variable `output`.
+By this point, `output` will contain all the text we want to print, with proper colors and indentation. All that's left is to print it, in the following way:
 
-```javascript
-      var output = inner (teishi.c ([].slice.call (arguments)));
-```
-
-We print the following:
 - The current time in milliseconds minus `ms` (the time in milliseconds when teishi was initialized), which will yield a time offset.
 - The colored `output`, which comes from passing `arguments` to `inner`.
 - `ansi.end`, to avoid coloring any subsequent output in the console.
 
 ```javascript
-      console.log ('(' + (teishi.time () - ms) + 'ms)', inner (dale.do (arguments, function (v) {return teishi.c (v)}), 0) + ansi.end);
+      console.log ('(' + (teishi.time () - ms) + 'ms)', output + ansi.end ());
 ```
-
-Notice that we don't actually pass `arguments` - instead, we iterate through `arguments`, and return a copy of each of them using `teishi.c`. The purpose of this refinement is to make circular elements (if they exist) to be printed with their proper paths. For an example of this, try printing an HTTP `response` object.
 
 Finally we return `false`, since this allows calling functions to print an error and return `false` in the same line. For example: `return teishi.l ('This is an error')`.
 
@@ -1898,7 +1921,7 @@ If the element is a `function`, and `test` was already set, we return an error. 
 If the element is neither a `function` nor a `string`, we return an error.
 
 ```javascript
-         else return ['Elements #4 and #5 of a teishi simple rule must be either a string or a function, but element', '#' + (k + 4), 'is', v, 'and has type', type];
+         else return ['Elements #4 and #5 of a teishi simple rule must be either a string or a function, but element', '#' + (k + 1), 'is', v, 'and has type', type];
 ```
 
 If we are here, no error were found within the current iteration. We return `true`.

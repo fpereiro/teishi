@@ -1,5 +1,5 @@
 /*
-teishi - v3.3.0
+teishi - v3.4.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -82,69 +82,72 @@ Please refer to readme.md to read the annotated source.
 
    teishi.time = function () {return Date.now ()}
 
-   var ms = teishi.time ();
+   var ms = teishi.time (), lastColor, ansi = {
+      end:   function () {return isNode ? '\033[0m'  : ''},
+      bold:  function () {return isNode ? '\033[1m'  : ''},
+      white: function () {return isNode ? '\033[37m' : ''},
+      color: function (reverse) {
+         if (! isNode) return '';
+         var color = lastColor;
+         while (lastColor === color) color = Math.round (Math.random () * 5 + 1);
+         lastColor = color;
+         return '\033[' + (reverse ? '4' : '3') + color + 'm';
+      }
+   }
 
    teishi.l = function () {
-      var lastColor;
-      var ansi = {
-         end:   isNode ? '\033[0m'  : '',
-         bold:  isNode ? '\033[1m'  : '',
-         white: isNode ? '\033[37m' : '',
-         color: function (reverse) {
-            if (! isNode) return '';
-            var color = lastColor;
-            while (lastColor === color) color = Math.round (Math.random () * 5 + 1);
-            lastColor = color;
-            return '\033[' + (reverse ? '4' : '3') + color + 'm';
-         }
-      }
 
-      var indent = '';
+      var output = ansi.bold ();
 
-      var inner = function (value, recursive) {
+      (function inner (input, depth) {
 
-         var output    = ansi.bold;
-         var typeValue = teishi.t (value);
-         if (typeValue === 'object' && teishi.t (value, true) === 'arguments') typeValue = 'array';
+         var inputType = teishi.t (input), depth = depth || 0, first = true;
 
-         var complex = (typeValue === 'array' || typeValue === 'object') && recursive > 0;
+         if (inputType === 'object' && Object.prototype.toString.call (input) === '[object Arguments]') inputType = 'array';
 
-         if (complex) output += ansi.white + (typeValue === 'array' ? '[' : '{');
+         var indent = depth < 2 ? '' : '\n' + dale.times (depth - 1, 'do', function (v) {return '   '}).join ('');
 
-         if (recursive > 2 && dale.keys (value).length > 0) {
-            indent += '   ';
-            output += '\n' + indent;
+         if (depth > 0) {
+            if (inputType === 'array')  output += ansi.white () + '[';
+            else                        output += ansi.white () + '{';
          }
 
-         output += dale.do (value, function (v, k) {
+         dale.do (input, function (v, k) {
+
             var typeV = teishi.t (v);
 
-            if (recursive === 0 && k === 0 && (typeV === 'string' || typeV === 'integer') && value.length > 1) {
-               return ansi.bold + ansi.color (true) + v + ':' + ansi.end + ansi.bold;
+            if (depth === 0 && k === 0 && (typeV === 'string' || typeV === 'integer')) {
+               first = false;
+               return output += ansi.color (true) + v + ':' + ansi.end () + ansi.bold ();
             }
 
-            if (typeV === 'string' && recursive > 0) v = "'" + v + "'";
+            if (! first) output += ansi.white () + (depth === 0 ? ' ' : ', ');
+            first = false;
 
-            if (typeV === 'function' && (v + '').length > 150) v = (v + '').replace (/\n/g, '\n' + indent).slice (0, 150) + '...';
+            if (typeV === 'string' && depth > 0) v = "'" + v + "'";
+            if (typeV === 'function') {
+               v = v + '';
+               var baseIndent = v.match (/\s+(?=}$)/);
+               if (baseIndent !== null) v = v.replace (new RegExp (baseIndent [0], 'g'), '\n');
+               if (v.length > 150) v = v.slice (0, 150) + '...\n';
+               if (depth > 1) v = v.replace (/\n/g, inputType === 'array' ? indent : ('\n' + (k + ': ').replace (/./g, ' ') + indent.slice (1)));
+            }
 
-            var innerOutput = ansi.color ();
+            output += ansi.color ();
+            if (inputType === 'object') output += indent + (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ';
 
-            if (typeValue === 'object') innerOutput += (k.match (/^[0-9a-zA-Z_]+$/) ? k : "'" + k + "'") + ': ';
+            if (typeV === 'array' || typeV === 'object') inner (v, depth + 1);
+            else output += inputType === 'object' ? v : indent + v;
+         });
 
-            return innerOutput + ((typeV === 'array' || typeV === 'object') ? inner (v, recursive + 1) : v) + ansi.white;
-
-         }).join (recursive === 0 ? ' ' : ', ');
-
-         if (recursive > 2 && dale.keys (value).length > 0) {
-            indent = indent.slice (0, -3);
-            output += '\n' + indent;
+         if (depth > 0) {
+            if (inputType === 'array')  output += (depth > 1 ? '\n' : '') + indent.slice (4) + ansi.white () + ']';
+            if (inputType === 'object') output += (depth > 1 ? '\n' : '') + indent.slice (4) + ansi.white () + '}';
          }
-         if (complex) output += typeValue === 'array' ? ']' : '}';
 
-         return output;
-      }
+      }) (arguments);
 
-      console.log ('(' + (teishi.time () - ms) + 'ms)', inner (dale.do (arguments, function (v) {return teishi.c (v)}), 0) + ansi.end);
+      console.log ('(' + (teishi.time () - ms) + 'ms)', output + ansi.end ());
       return false;
    }
 
@@ -288,7 +291,7 @@ Please refer to readme.md to read the annotated source.
             if (test) return ['You can pass only one test function to a teishi simple rule but instead you passed two:', rule [3], 'and', rule [4]];
             test = v;
          }
-         else return ['Elements #4 and #5 of a teishi simple rule must be either a string or a function, but element', '#' + (k + 4), 'is', v, 'and has type', type];
+         else return ['Elements #4 and #5 of a teishi simple rule must be either a string or a function, but element', '#' + (k + 1), 'is', v, 'and has type', type];
          return true;
       });
 

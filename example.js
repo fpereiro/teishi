@@ -1,5 +1,5 @@
 /*
-teishi - v3.3.0
+teishi - v3.4.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -455,6 +455,30 @@ Run the examples by either including the script in a webpage or by running `node
       invalid3: {},
       valid: []
    });
+
+   function some (e, f, g) {
+      // Comment
+      var code = ['as', 'data'];
+      var inner = function (h, i, j) {
+         return i;
+      }
+      var data = {
+         a: [1, 2, 3],
+         b: [4, 5, 6]
+      }
+      return inner ();
+   }
+
+   function fun (a, b, c) {
+      return d;
+   }
+
+   teishi.l (['hello', 'there', some, 'you', [{
+      hello: 'there',
+      otra: 'mas',
+      fun: fun,
+      other: true
+   }, [/a/, /b/, {a: 'aa'}, [some, fun], 'c'], 'yep']]);
 
    teishi.v ('Check', [
       ['aaa', 1, 'string']
