@@ -1,5 +1,5 @@
 /*
-teishi - v3.4.0
+teishi - v3.5.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -145,7 +145,7 @@ Please refer to readme.md to read the annotated source.
             if (inputType === 'object') output += (depth > 1 ? '\n' : '') + indent.slice (4) + ansi.white () + '}';
          }
 
-      }) (arguments);
+      }) (teishi.c (arguments));
 
       console.log ('(' + (teishi.time () - ms) + 'ms)', output + ansi.end ());
       return false;

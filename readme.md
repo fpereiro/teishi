@@ -6,6 +6,10 @@ teishi is a tool for validating the input of functions.
 
 teishi means "stop" in Japanese. The inspiration for the library comes from the concept of "auto-activation", which is one of the two main pillars of the Toyota Production System (according to its creator, [Taiichi Ohno](http://en.wikipedia.org/wiki/Taiichi_Ohno)).
 
+## Current status of the project
+
+The current version of teishi, v3.5.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+
 ## Usage examples
 
 Validate the input of a function that receives two arguments, an integer (`counter`) and a function (`callback`). The second argument is optional.
@@ -158,8 +162,8 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 Or you can use these links to use the latest version - courtesy of [RawGit](https://rawgit.com) and [MaxCDN](https://maxcdn.com).
 
 ```html
-<script src="https://cdn.rawgit.com/fpereiro/dale/6360fc6ee346d519202246f586947bafd7960d83/dale.js"></script>
-<script src="https://cdn.rawgit.com/fpereiro/teishi/b3b1354116c8f03a74085c9310964a536a058c9c/teishi.js"></script>
+<script src="https://cdn.rawgit.com/fpereiro/dale/79a2fc1a49d7ae59a9addd612a775a7d11020eed/dale.js"></script>
+<script src=""></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -936,7 +940,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.4.0
+teishi - v3.5.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1502,11 +1506,13 @@ If `depth` is larger than `0`, we place the closing square or curly brackets, de
 
 We close `inner` and we immediately execute it, passing `arguments` as its first element. This means that the case where `depth` equals 0 will be when we pass `arguments`, which we interpret to be an array. Since `inner` is only called on complex objects, this is how we assure that `inputType` will always be an array or object.
 
+Notice that we copy `arguments`. The reason for doing is is that we want to be able to print circular structures without falling into an infinite loop.
+
 ```javascript
-      }) (arguments);
+      }) (teishi.c (arguments));
 ```
 
-By this point, `output` will contain all the text we want to print, with proper colors and indentation. All that's left is to print it, in the following way:
+By now, `output` will contain all the text we want to print, with proper colors and indentation. All that's left is to print it, in the following way:
 
 - The current time in milliseconds minus `ms` (the time in milliseconds when teishi was initialized), which will yield a time offset.
 - The colored `output`, which comes from passing `arguments` to `inner`.
