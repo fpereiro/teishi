@@ -1,5 +1,5 @@
 /*
-teishi - v3.5.0
+teishi - v3.6.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -105,7 +105,7 @@ Please refer to readme.md to read the annotated source.
 
          if (inputType === 'object' && Object.prototype.toString.call (input) === '[object Arguments]') inputType = 'array';
 
-         var indent = depth < 2 ? '' : '\n' + dale.times (depth - 1, 'do', function (v) {return '   '}).join ('');
+         var indent = depth < 2 ? '' : '\n' + dale.do (dale.times (depth - 1), function (v) {return '   '}).join ('');
 
          if (depth > 0) {
             if (inputType === 'array')  output += ansi.white () + '[';
@@ -244,7 +244,7 @@ Please refer to readme.md to read the annotated source.
             if (k === 'min')  return a >= v;
             if (k === 'max')  return a <= v;
             if (k === 'less') return a < v;
-            if (k === 'more') return a > v;
+                              return a > v;
          });
       }, 'should be in range'),
 
@@ -269,7 +269,9 @@ Please refer to readme.md to read the annotated source.
          return ['each teishi rule must be an array or boolean or function but instead is', rule, 'with type', ruleType];
       }
 
-      if (! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
+      var typeFirst = teishi.t (rule [0]);
+
+      if (! (typeFirst === 'string' || (typeFirst === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
 
       if (rule.length === 3) return true;
 
@@ -317,7 +319,6 @@ Please refer to readme.md to read the annotated source.
 
       if (apres !== undefined && apres !== true && teishi.t (apres) !== 'function') return teishi.l ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 
-
       var validation = teishi.validateRule (rule);
       if (validation !== true) return reply (validation, apres);
 
@@ -339,18 +340,13 @@ Please refer to readme.md to read the annotated source.
          });
       }
 
-      var test = teishi.test.type;
-      var multi;
-
-      dale.do (rule, function (v, k) {
-         if (k < 3) return;
-         var type = teishi.t (v);
-         if (type === 'string')   multi = v;
-         if (type === 'function') test  = v;
-      });
+      var typeFourth = teishi.t (rule [3]), typeFifth = teishi.t (rule [4]);
+      var test  = typeFourth === 'function' ? rule [3] : (typeFifth === 'function' ? rule [4] : teishi.test.type);
+      var multi = typeFourth === 'string'   ? rule [3] : (typeFifth === 'string'   ? rule [4] : undefined);
 
       var result;
       var names = ruleFirstType === 'array' ? rule [0] : [rule [0]];
+
       var typeCompare = teishi.t (rule [1], true), typeTo = teishi.t (rule [2], true);
 
       if ((multi === 'each' || multi === 'eachOf') && ((typeCompare === 'array' && rule [1].length === 0) || (typeCompare === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
@@ -387,6 +383,7 @@ Please refer to readme.md to read the annotated source.
 
       if (result === true) return true;
       else return reply (result, apres);
+
    }
 
    teishi.stop = function () {

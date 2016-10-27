@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.5.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v3.6.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -162,8 +162,8 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 Or you can use these links to use the latest version - courtesy of [RawGit](https://rawgit.com) and [MaxCDN](https://maxcdn.com).
 
 ```html
-<script src="https://cdn.rawgit.com/fpereiro/dale/79a2fc1a49d7ae59a9addd612a775a7d11020eed/dale.js"></script>
-<script src="https://cdn.rawgit.com/fpereiro/teishi/4730d02e60bc5b59c1d4660bcdbc4159e5ed6875/teishi.js"></script>
+<script src="https://cdn.rawgit.com/fpereiro/dale/c341cece6194bb1827c4b782cd6ef03765a76e24/dale.js"></script>
+<script src=""></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -816,7 +816,7 @@ The possible types of a value can be grouped into three:
 - **Values which `typeof` considers `number`**: `nan`, `infinity`, `integer`, `float`.
 - **values which `typeof` considers `object`**: `array`, `date`, `null`, `regex` and `object`.
 
-If you pass `true` as a second argument, `type` will distinguish between *true objects* (ie: object literals) and other objects. If you pass an object that belongs to a class, `type` will return the lowercased class name instead.
+If you pass `true` as a second argument, `type` will distinguish between *plain objects* (ie: object literals) and other objects. If you pass an object that belongs to a class, `type` will return the lowercased class name instead.
 
 The clearest example of this is the `arguments` object:
 
@@ -934,13 +934,13 @@ For more information, please refer to the annotated source code below, where I d
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 400 lines long.
+The complete source code is contained in `teishi.js`. It is about 390 lines long.
 
 Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.5.0
+teishi - v3.6.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1349,7 +1349,7 @@ If `input` is an `arguments` pseudo-array, we will set `inputType` to `'array'`.
 We define a local variable `indent`. If `depth` is less than 2, we don't want to indent anything, so we will set it to an empty string. Otherwise, we will set it to be a newline (`\n`) followed by (depth - 1) * 3 spaces (for example, if `depth` is 2, then `indent` will have 3 spaces).
 
 ```javascript
-         var indent = depth < 2 ? '' : '\n' + dale.times (depth - 1, 'do', function (v) {return '   '}).join ('');
+         var indent = depth < 2 ? '' : '\n' + dale.do (dale.times (depth - 1), function (v) {return '   '}).join ('');
 ```
 
 If `depth` is larger than 0, we add an opening `[` or `{`, depending on whether `inputType` is `array` or `object`. Notice that this assumes that `inputType` is always either of these. Because of how we invoke this function the first time, and how we invoke it recursively, this will always be the case.
@@ -1848,7 +1848,8 @@ Our choice of `names` as the distinctive element of a teishi simple rule is stra
 We write an intricate conditional to check that whether the rule has a `names` as its first element. If that is **not** the case, we are dealing with a complex rule, so we return `true`.
 
 ```javascript
-      if (! (teishi.t (rule [0]) === 'string' || (teishi.t (rule [0]) === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
+      var typeFirst = teishi.t (rule [0]);
+      if (! (typeFirst === 'string' || (typeFirst === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
 ```
 
 If we are here, we are dealing with a simple rule.
@@ -2092,26 +2093,22 @@ If any of these calls returns `false`, the loop is stopped and `false` is return
       }
 ```
 
-We define a local variable `test` to hold the test function that we will use. We initialize it to `teishi.test.type`, the default test function.
+We define the local variable `typeFourth` and `typeFifth` to hold the types of the fourth and fifth elements of the rule.
 
 ```javascript
-      var test = teishi.test.type;
+      var typeFourth = teishi.t (rule [3]), typeFifth = teishi.t (rule [4]);
 ```
 
-We define a local variable `multi`, to store the multi operator. The default value of `multi` is `undefined`.
+We define a local variable `test`, to store the test operator. If either the fourth or fifth elements of the array are a function, we will set `test` to that. Otherwise, the default value of `test` is `teishi.test.type`.
 
 ```javascript
-      var multi;
+      var test  = typeFourth === 'function' ? rule [3] : (typeFifth === 'function' ? rule [4] : teishi.test.type);
 ```
 
-We iterate through the fourth and fifth elements of the rule. If one of them is a string, we set `multi` to its value. And if one of them is a function, we set `test` to its value.
+We define a local variable `multi`, to store the multi operator. If either the fourth or fifth elements of the array are a string, we will set `multi` to that. Otherwise, the default value of `test` is `undefined`.
 
 ```javascript
-      dale.do (rule.splice (3, 5), function (v) {
-         var type = teishi.t (v);
-         if (type === 'string')   multi = v;
-         if (type === 'function') test  = v;
-      });
+      var multi = typeFourth === 'string'   ? rule [3] : (typeFifth === 'string'   ? rule [4] : undefined);
 ```
 
 We set a local variable `result` to hold the result of the validation.
