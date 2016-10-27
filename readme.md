@@ -1773,7 +1773,7 @@ We test the corresponding condition and return the result. We close the `fun` an
             if (k === 'min')  return a >= v;
             if (k === 'max')  return a <= v;
             if (k === 'less') return a < v;
-            if (k === 'more') return a > v;
+                              return a > v;
          });
       }, 'should be in range'),
    }
