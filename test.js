@@ -1,9 +1,20 @@
 /*
-teishi - v3.6.0
+teishi - v3.7.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
-Run the examples by either including the script in a webpage or by running `node example` at the command prompt.
+To run the tests:
+   - node.js: enter `node test` at the command prompt.
+   - browser: copy the following three lines into a new file and open it with your browser.
+
+// Start copying here
+
+<script src="node_modules/dale/dale.js"></script>
+<script src="teishi.js"></script>
+<script src="test.js"></script>
+
+// End copying here
+
 */
 
 (function () {
