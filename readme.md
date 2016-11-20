@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.7.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v3.8.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -163,7 +163,7 @@ Or you can use these links to use the latest version - courtesy of [RawGit](http
 
 ```html
 <script src="https://cdn.rawgit.com/fpereiro/dale/1bb6973037dd409f667231d51c55845672d19821/dale.js"></script>
-<script src="https://cdn.rawgit.com/fpereiro/teishi/22ee2e9df052bbfaa26a67700c492034159540e1/teishi.js"></script>
+<script src=""></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -940,7 +940,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.7.0
+teishi - v3.8.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1699,10 +1699,10 @@ If we are here, at least one of the arguments is complex. If their type is diffe
             if (teishi.t (a, true) !== teishi.t (b, true)) return false;
 ```
 
-If `a` is a complex object that is also empty, and `b` is also empty, we will consider them equal, since we already know they have the same type.
+If we're here, both elements are complex and have the same type. We now compare their keys and check that they are exactly the same. To do this, instead of iterating the keys, we simply take all of them, sort them, stringify them and then compare them. If this comparison is not `true`, we know there is one key in one object that's not present in the other, hence we return `false`.
 
 ```javascript
-            if (dale.keys (a).length === 0 && dale.keys (b).length === 0) return true;
+            if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
 ```
 
 We loop through the elements of `a`.
@@ -1713,9 +1713,11 @@ We loop through the elements of `a`.
 
 Here `v` is a given element of `a`, and `k` is the key of that element (if `a` is an array, `k` will be a number, and if `a` is an object, `k` will be a string). We invoke `inner` recursively passing it `v` and `b [k]`, the latter being the corresponding element to `v` in `b`.
 
+If a difference is found, this function will return `false`. If, however, both elements are either empty arrays or objects, the invocation to `dale.stop` will return `undefined`. In this case, they must be true, since they are elements of the same type with no elements, so we return `true`.
+
 ```javascript
                return inner (v, b [k]);
-            });
+            }) === false ? false : true;
 ```
 
 We invoke `inner` passing `a` and `b`. We then close the function and specify the `shouldClause`.

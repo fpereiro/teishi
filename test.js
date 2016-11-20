@@ -1,5 +1,5 @@
 /*
-teishi - v3.7.0
+teishi - v3.8.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -466,6 +466,12 @@ To run the tests:
       invalid3: {},
       valid: []
    });
+
+   function example23 (input) {
+      return teishi.v (['input', input, [1, 2, 3, 4], teishi.test.equal]);
+   }
+
+   tester (example23, {invalid1: [1, 2, 3], valid: [1, 2, 3, 4]});
 
    function some (e, f, g) {
       // Comment
