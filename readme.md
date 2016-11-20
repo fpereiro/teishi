@@ -163,7 +163,7 @@ Or you can use these links to use the latest version - courtesy of [RawGit](http
 
 ```html
 <script src="https://cdn.rawgit.com/fpereiro/dale/1bb6973037dd409f667231d51c55845672d19821/dale.js"></script>
-<script src=""></script>
+<script src="https://cdn.rawgit.com/fpereiro/teishi/5dfad9b2902204fb39a1fdf0cf1c6d3f44b9a41d/teishi.js"></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
