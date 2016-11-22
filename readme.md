@@ -163,7 +163,7 @@ Or you can use these links to use the latest version - courtesy of [RawGit](http
 
 ```html
 <script src="https://cdn.rawgit.com/fpereiro/dale/1bb6973037dd409f667231d51c55845672d19821/dale.js"></script>
-<script src=""></script>
+<script src="https://cdn.rawgit.com/fpereiro/teishi/984e9295f7ef31cd04576b8f9ac015e1953aabc1/teishi.js"></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -1756,6 +1756,7 @@ Although defining `simple` and `inner` outside of the test functions would elimi
             return dale.stop (a, false, function (v, k) {
                return inner (v, b [k]);
             }) === false ? false : true;
+         } (a, b));
       }, 'should not be equal to'),
 ```
 
