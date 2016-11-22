@@ -1,5 +1,5 @@
 /*
-teishi - v3.8.0
+teishi - v3.9.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -219,17 +219,18 @@ Please refer to readme.md to read the annotated source.
             return dale.stop (a, false, function (v, k) {
                return inner (v, b [k]);
             }) === false ? false : true;
-         } (a, b))
+         } (a, b));
       }, 'should be equal to'),
 
       notEqual: teishi.makeTest (function (a, b) {
          return ! (function inner (a, b) {
             if (teishi.simple (a) && teishi.simple (b)) return a === b;
             if (teishi.t (a, true) !== teishi.t (b, true)) return false;
+            if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
             return dale.stop (a, false, function (v, k) {
                return inner (v, b [k]);
-            });
-         } (a, b))
+            }) === false ? false : true;
+         } (a, b));
       }, 'should not be equal to'),
 
       range:    teishi.makeTest (function (a, b) {

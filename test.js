@@ -1,5 +1,5 @@
 /*
-teishi - v3.8.0
+teishi - v3.9.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -472,6 +472,30 @@ To run the tests:
    }
 
    tester (example23, {invalid1: [1, 2, 3], valid: [1, 2, 3, 4]});
+
+   function example24 (input) {
+      return teishi.v (['input', input, [1, 2, 3, 4], teishi.test.notEqual]);
+   }
+
+   tester (example24, {invalid1: [1, 2, 3, 4], valid1: [1, 2, 3], valid2: [1, 2, 4]});
+
+   function example25 (input) {
+      return teishi.v (['not a stooge', input, ['moe', 'larry', 'curly'], 'oneOf', teishi.test.notEqual]);
+   }
+
+   tester (example25, {valid1: 'moe', valid2: 'larry', valid3: 'curly', valid4: 'iggy pop'});
+
+   function example26 (input) {
+      return teishi.v (['not a stooge', input, ['moe', 'moe', 'moe'], 'oneOf', teishi.test.notEqual]);
+   }
+
+   tester (example26, {invalid1: 'moe', valid1: 'larry', valid2: 'curly', valid3: 'iggy pop'});
+
+   function example27 (input) {
+      return teishi.v (['not a stooge', ['moe', 'larry', 'curly'], input, 'each', teishi.test.notEqual]);
+   }
+
+   tester (example27, {invalid1: 'moe', invalid2: 'larry', invalid3: 'curly', valid: 'iggy pop'});
 
    function some (e, f, g) {
       // Comment

@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.8.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v3.9.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -163,7 +163,7 @@ Or you can use these links to use the latest version - courtesy of [RawGit](http
 
 ```html
 <script src="https://cdn.rawgit.com/fpereiro/dale/1bb6973037dd409f667231d51c55845672d19821/dale.js"></script>
-<script src="https://cdn.rawgit.com/fpereiro/teishi/5dfad9b2902204fb39a1fdf0cf1c6d3f44b9a41d/teishi.js"></script>
+<script src=""></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -295,6 +295,20 @@ Historical note: in a previous version of teishi, `teishi.test.equal` was the de
 #### `teishi.test.notEqual`
 
 `teishi.test.notEqual` is just like `teishi.test.equal`, but will return true if two things are **different** (and false otherwise).
+
+One very important caveat: if you use the `oneOf` or `eachOf` operator with this test function, you will probably not get the results you want. Take the following example:
+
+```javascript
+  ['not a stooge', name, ['moe', 'larry', 'curly'], 'oneOf', teishi.test.notEqual] // this will return true even if name is `moe`, `larry` or `curly`.
+```
+
+Even if `name` is `'moe'`, this will still be true because `'moe'` is not equal to `'larry'` or `'curly'`. To achieve what you want, you can rewrite this rule as follows:
+
+```javascript
+  ['not a stooge', ['moe', 'larry', 'curly'], name, 'each', teishi.test.notEqual] // this won't let `moe` through
+```
+
+However, this is but a workaround, since the error message will look a bit strange. Because how `multi` operators work, negations against a set cannot be expressed directly. If you're experiencing a problem with this, please [open an issue](https://github.com/fpereiro/teishi/issues).
 
 #### `teishi.test.range`
 
@@ -940,7 +954,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.8.0
+teishi - v3.9.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1723,7 +1737,7 @@ If a difference is found, this function will return `false`. If, however, both e
 We invoke `inner` passing `a` and `b`. We then close the function and specify the `shouldClause`.
 
 ```javascript
-         } (a, b))
+         } (a, b));
       }, 'should be equal to'),
 ```
 
@@ -1737,11 +1751,11 @@ Although defining `simple` and `inner` outside of the test functions would elimi
       notEqual: teishi.makeTest (function (a, b) {
          return ! (function inner (a, b) {
             if (teishi.simple (a) && teishi.simple (b)) return a === b;
-            if (teishi.t (a) !== teishi.t (b)) return false;
+            if (teishi.t (a, true) !== teishi.t (b, true)) return false;
+            if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
             return dale.stop (a, false, function (v, k) {
                return inner (v, b [k]);
-            });
-         } (a, b))
+            }) === false ? false : true;
       }, 'should not be equal to'),
 ```
 
