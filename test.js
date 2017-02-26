@@ -1,5 +1,5 @@
 /*
-teishi - v3.9.0
+teishi - v3.10.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -514,13 +514,15 @@ To run the tests:
       return d;
    }
 
-   teishi.l (['hello', 'there', some, 'you', [{
-      hello: 'there',
-      otra: 'mas',
-      fun: fun,
-      other: true,
-      buffer: new Buffer ('hello there', 'utf8'),
-   }, [/a/, /b/, {a: 'aa'}, [some, fun], 'c'], 'yep']]);
+   if (isNode) {
+      teishi.l (['hello', 'there', some, 'you', [{
+         hello: 'there',
+         otra: 'mas',
+         fun: fun,
+         other: true,
+         buffer: new Buffer ('hello there', 'utf8'),
+      }, [/a/, /b/, {a: 'aa'}, [some, fun], 'c'], 'yep']]);
+   }
 
    teishi.v ('Check', [
       ['aaa', 1, 'string']
