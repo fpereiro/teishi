@@ -1,5 +1,5 @@
 /*
-teishi - v3.10.0
+teishi - v3.11.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -19,6 +19,8 @@ To run the tests:
 
 (function () {
 
+   var startTime = new Date ().getTime ();
+
    var isNode = typeof exports === 'object';
 
    var dale   = isNode ? require ('dale')        : window.dale;
@@ -34,7 +36,8 @@ To run the tests:
          console.log ('');
          if (mismatch) {
             teishi.l ('Mismatch!', 'Aborting test now');
-            process.exit (1);
+            teishi.perf = false;
+            throw new Error ('A test failed!');
          }
       });
    }
@@ -86,10 +89,10 @@ To run the tests:
    tester (myFunctionOld, myFunctionInput);
    tester (myFunction, myFunctionInput);
 
-   function example1 (counter, callback) {
+   function example1 (a, b) {
       if (teishi.stop ('example1', [
-         ['counter', counter, 'integer'],
-         ['callback', callback, ['function', 'undefined'], 'oneOf']
+         ['counter', a, 'integer'],
+         ['callback', b, ['function', 'undefined'], 'oneOf']
       ])) return false;
 
       return true;
@@ -497,6 +500,7 @@ To run the tests:
 
    tester (example27, {invalid1: 'moe', invalid2: 'larry', invalid3: 'curly', valid: 'iggy pop'});
 
+
    function some (e, f, g) {
       // Comment
       var code = ['as', 'data'];
@@ -527,7 +531,10 @@ To run the tests:
    teishi.v ('Check', [
       ['aaa', 1, 'string']
    ], function (error) {
-      if (error) teishi.l ('Finished', 'All tests ran successfully!');
+      if (error) {
+         if (teishi.perf !== false) teishi.perf = new Date ().getTime () - startTime;
+         teishi.l ('Finished', 'All tests ran successfully!');
+      }
       else       teishi.l ('There was an error with the apres function!');
    });
 

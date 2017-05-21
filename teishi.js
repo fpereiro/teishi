@@ -1,5 +1,5 @@
 /*
-teishi - v3.10.0
+teishi - v3.11.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -80,7 +80,7 @@ Please refer to readme.md to read the annotated source.
       return output;
    }
 
-   teishi.time = function () {return Date.now ()}
+   teishi.time = function () {return new Date ().getTime ()}
 
    var ms = teishi.time (), lastColor, ansi = {
       end:   function () {return isNode ? '\033[0m'  : ''},
