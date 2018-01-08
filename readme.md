@@ -890,7 +890,7 @@ A function that returns the current date in milliseconds.
 Why use `teishi.l` instead of `console.log`?
 - Output comes in pretty colors, thanks to [cutting edge 1980s technology](http://en.wikipedia.org/wiki/ANSI_escape_code).
 - Complex values (arrays and objects) are expanded, so you can print nested objects without having to stringify them.
-- It prints a time offset that can be helpful when profiling code.
+- It prints a timestamp that can be helpful when profiling or debugging code.
 - You save three keystrokes every time you invoke this function.
 
 `teishi.l` takes one or more arguments, of any type. If the first argument is a string, and there's more than one argument passed to `teishi.l`, the first argument will be treated as a `label`, which is just some text with a different background color, followed by a colon (`:`).
