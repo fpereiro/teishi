@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.11.1, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v3.12.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -163,7 +163,7 @@ Or you can use these links to use the latest version - courtesy of [RawGit](http
 
 ```html
 <script src="https://cdn.rawgit.com/fpereiro/dale/bfd9e2830e733ff8c9d97fd9dd5473b4ff804d4c/dale.js"></script>
-<script src="https://cdn.rawgit.com/fpereiro/teishi/f0999bdc2db5d42a7e5c71a016f3dd594996f92f/teishi.js"></script>
+<script src=""></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -968,7 +968,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.11.1
+teishi - v3.12.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1283,14 +1283,13 @@ We define `teishi.time`, which will return the current date in milliseconds.
    teishi.time = function () {return Date.now ()}
 ```
 
-We define three local variables useful for `teishi.l`, defined below:
+We define two local variables useful for `teishi.l`, defined below:
 
-- `ms`, a variable that holds the current date measured in milliseconds. This will be useful as a sort of *time zero*.
 - `lastColor`, a variable that holds the last ansi color used, so that it is not repeated twice in a row.
 - `ansi`, an object with several defaults for printing color to the console.
 
 ```javascript
-   var ms = teishi.time (), lastColor, ansi = {
+   var lastColor, ansi = {
 ```
 
 The magic of `teishi.l`'s colors is done through [ANSI escape codes](http://en.wikipedia.org/wiki/ANSI_escape_code). We will define a local object `ansi` which will contain four functions.
@@ -1542,12 +1541,12 @@ Notice that we copy `arguments`. The reason for doing is is that we want to be a
 
 By now, `output` will contain all the text we want to print, with proper colors and indentation. All that's left is to print it, in the following way:
 
-- The current time in milliseconds minus `ms` (the time in milliseconds when teishi was initialized), which will yield a time offset.
+- The current UTC time, printed according to the format specified in [RFC 2822](http://tools.ietf.org/html/rfc2822#section-3.3).
 - The colored `output`, which comes from passing `arguments` to `inner`.
 - `ansi.end`, to avoid coloring any subsequent output in the console.
 
 ```javascript
-      console.log ('(' + (teishi.time () - ms) + 'ms)', output + ansi.end ());
+      console.log ('(' + new Date ().toISOString () + ')', output + ansi.end ());
 ```
 
 Finally we return `false`, since this allows calling functions to print an error and return `false` in the same line. For example: `return teishi.l ('This is an error')`.
