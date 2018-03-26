@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.12.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v3.13.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -163,7 +163,7 @@ Or you can use these links to use the latest version - courtesy of [RawGit](http
 
 ```html
 <script src="https://cdn.rawgit.com/fpereiro/dale/bfd9e2830e733ff8c9d97fd9dd5473b4ff804d4c/dale.js"></script>
-<script src="https://cdn.rawgit.com/fpereiro/teishi/f6da2ec45354300649e511cf5596365bfe157f13/teishi.js"></script>
+<script src=""></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -828,7 +828,7 @@ function (request, response) {
 
 ## Helper functions
 
-teishi relies on eight helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
+teishi relies on nine helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
 
 ### teishi.t
 
@@ -879,6 +879,13 @@ If `input` has any circular references, `teishi.c` will replace them a string wi
 
 If `input` is (or contains) an `arguments` pseudo-array, it will be copied into a standard array.
 
+### teishi.eq
+
+`teishi.eq` (short for `teishi.equal`) takes two elements and returns `true` if they are equal and `false` otherwise. This function is mostly useful for comparing whether two arrays or objects contain the same things, despite being occupying distinct locations in memory. The rules for equality are as follows:
+
+- If both arguments are simple, the strict equality check is used (`===`).
+- If both arguments are complex, 1) their types must be the same (as per `teishi.t`); 2) their keys must be the same; and 3) the values for each of the keys must fulfill the same equality conditions, whether they are simple or complex.
+
 ### teishi.time
 
 A function that returns the current date in milliseconds.
@@ -915,9 +922,9 @@ teishi.test.type = teishi.makeTest (
 To create a test function, you need to invoke the function `teishi.makeTest`. This function takes two arguments:
 - `fun`, a function that takes two arguments and returns `true` or `false`. These two arguments will be, as you might imagine, the `compare` and the `to` of each rule.
 - `clauses`, which can be one of the following:
-   - a string (`shouldClause`)
-   - an array containing a `shouldClause`
-   - an array containing a `shouldClause` and a `finalClause`
+   - a string (`shouldClause`).
+   - an array containing a `shouldClause`.
+   - an array containing a `shouldClause` and a `finalClause`.
 
 `shouldClause` is required, but `finalClause` is optional. In fact, of all five teishi test functions, only `teishi.test.type` uses a `finalClause`.
 
@@ -968,7 +975,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.12.0
+teishi - v3.13.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1276,6 +1283,46 @@ The result of the above invocation will be:
 ```
 
 OK, enough of `teishi.c`! Let's move on to the next function.
+
+`teishi.eq` is a function that checks for deep equality between objects. It takes two arguments.
+
+```javascript
+   teishi.eq = function (a, b) {
+```
+
+If `a` and `b` are simple, we compare them with `===` and return the result.
+
+```javascript
+      if (teishi.simple (a) && teishi.simple (b)) return a === b;
+```
+
+If we are here, at least one of the arguments is complex. If their type is different, we return `false`, since they can't be equal.
+
+```javascript
+      if (teishi.t (a, true) !== teishi.t (b, true)) return false;
+```
+
+If we're here, both elements are complex and have the same type. We now compare their keys and check that they are exactly the same. To do this, instead of iterating the keys, we simply take all of them, sort them, stringify them and then compare them. If this comparison is not `true`, we know there is one key in one object that's not present in the other, hence we return `false`.
+
+```javascript
+      if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
+```
+
+We loop through the elements of `a`.
+
+```javascript
+      return dale.stop (a, false, function (v, k) {
+```
+
+Here `v` is a given element of `a`, and `k` is the key of that element (if `a` is an array, `k` will be a number, and if `a` is an object, `k` will be a string). We invoke `inner` recursively passing it `v` and `b [k]`, the latter being the corresponding element to `v` in `b`.
+
+If a difference is found, this function will return `false`. If, however, both elements are either empty arrays or objects, the invocation to `dale.stop` will return `undefined`. In this case, they must be true, since they are elements of the same type with no elements, so we return `true`. At this point, there's nothing else to do, so we close the function.
+
+```javascript
+         return teishi.eq (v, b [k]);
+      }) === false ? false : true;
+   }
+```
 
 We define `teishi.time`, which will return the current date in milliseconds.
 
@@ -1702,74 +1749,19 @@ Notice that all of these functions:
       ),
 ```
 
-`teishi.test.equal` uses the most complex `fun` of all test functions, because it tests for deep equality if its inputs are arrays or objects.
+`teishi.test.equal` tests for deep equality if its inputs are arrays or objects, relying on `teishi.eq`.
 
 ```javascript
-      equal:    teishi.makeTest (function (a, b) {
+      equal:    teishi.makeTest (teishi.eq, 'should be equal to'),
 ```
 
-We define a function called `inner`. We name it because the function is recursive, so it needs a name to call itself. Also, we wrap the function in parenthesis to execute it immediately. `inner` receives two arguments, which are the two objects we're comparing.
-
-```javascript
-         return (function inner (a, b) {
-```
-
-If `a` and `b` are simple, we compare them with `===` and return the result.
-
-```javascript
-            if (teishi.simple (a) && teishi.simple (b))      return a === b;
-```
-
-If we are here, at least one of the arguments is complex. If their type is different, we return `false`, since they can't be equal.
-
-```javascript
-            if (teishi.t (a, true) !== teishi.t (b, true)) return false;
-```
-
-If we're here, both elements are complex and have the same type. We now compare their keys and check that they are exactly the same. To do this, instead of iterating the keys, we simply take all of them, sort them, stringify them and then compare them. If this comparison is not `true`, we know there is one key in one object that's not present in the other, hence we return `false`.
-
-```javascript
-            if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
-```
-
-We loop through the elements of `a`.
-
-```javascript
-            return dale.stop (a, false, function (v, k) {
-```
-
-Here `v` is a given element of `a`, and `k` is the key of that element (if `a` is an array, `k` will be a number, and if `a` is an object, `k` will be a string). We invoke `inner` recursively passing it `v` and `b [k]`, the latter being the corresponding element to `v` in `b`.
-
-If a difference is found, this function will return `false`. If, however, both elements are either empty arrays or objects, the invocation to `dale.stop` will return `undefined`. In this case, they must be true, since they are elements of the same type with no elements, so we return `true`.
-
-```javascript
-               return inner (v, b [k]);
-            }) === false ? false : true;
-```
-
-We invoke `inner` passing `a` and `b`. We then close the function and specify the `shouldClause`.
-
-```javascript
-         } (a, b));
-      }, 'should be equal to'),
-```
-
-`teishi.test.notEqual` is almost identical to `teishi.test.equal`, because their `fun`s are almost identical. The only difference between them is in the third line of the `fun`, where we add a `!` to invert the result returned by `inner`.
+`teishi.test.notEqual` is almost identical to `teishi.test.equal`, except that we invert the result returned by `teishi.eq`.
 
 Their `shouldClause`s also differ by one `'no'`.
 
-Although defining `simple` and `inner` outside of the test functions would eliminate copypasting and save about five lines, I feel that in this particular case, it is more elegant to duplicate the code.
-
 ```javascript
       notEqual: teishi.makeTest (function (a, b) {
-         return ! (function inner (a, b) {
-            if (teishi.simple (a) && teishi.simple (b)) return a === b;
-            if (teishi.t (a, true) !== teishi.t (b, true)) return false;
-            if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
-            return dale.stop (a, false, function (v, k) {
-               return inner (v, b [k]);
-            }) === false ? false : true;
-         } (a, b));
+         return ! teishi.eq (a, b);
       }, 'should not be equal to'),
 ```
 

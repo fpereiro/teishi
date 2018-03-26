@@ -1,5 +1,5 @@
 /*
-teishi - v3.12.0
+teishi - v3.13.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -78,6 +78,15 @@ Please refer to readme.md to read the annotated source.
       });
 
       return output;
+   }
+
+   teishi.eq = function (a, b) {
+      if (teishi.simple (a) && teishi.simple (b)) return a === b;
+      if (teishi.t (a, true) !== teishi.t (b, true)) return false;
+      if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
+      return dale.stop (a, false, function (v, k) {
+         return teishi.eq (v, b [k]);
+      }) === false ? false : true;
    }
 
    teishi.time = function () {return new Date ().getTime ()}
@@ -211,26 +220,10 @@ Please refer to readme.md to read the annotated source.
          ['should have as type', ['with type', teishi.t]]
       ),
 
-      equal:    teishi.makeTest (function (a, b) {
-         return (function inner (a, b) {
-            if (teishi.simple (a) && teishi.simple (b)) return a === b;
-            if (teishi.t (a, true) !== teishi.t (b, true)) return false;
-            if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
-            return dale.stop (a, false, function (v, k) {
-               return inner (v, b [k]);
-            }) === false ? false : true;
-         } (a, b));
-      }, 'should be equal to'),
+      equal:    teishi.makeTest (teishi.eq, 'should be equal to'),
 
       notEqual: teishi.makeTest (function (a, b) {
-         return ! (function inner (a, b) {
-            if (teishi.simple (a) && teishi.simple (b)) return a === b;
-            if (teishi.t (a, true) !== teishi.t (b, true)) return false;
-            if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
-            return dale.stop (a, false, function (v, k) {
-               return inner (v, b [k]);
-            }) === false ? false : true;
-         } (a, b));
+         return ! teishi.eq (a, b);
       }, 'should not be equal to'),
 
       range:    teishi.makeTest (function (a, b) {
