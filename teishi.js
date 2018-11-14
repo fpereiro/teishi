@@ -1,5 +1,5 @@
 /*
-teishi - v3.13.1
+teishi - v3.13.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -53,6 +53,11 @@ Please refer to readme.md to read the annotated source.
 
    teishi.complex = function (input) {
       return ! teishi.simple (input);
+   }
+
+   teishi.last = function (array) {
+      if (teishi.t (array) !== 'array') return false;
+      return array [array.length - 1];
    }
 
    teishi.c = function (input, path, seen) {

@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.13.1, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v3.13.2, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -159,11 +159,11 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 <script src="teishi.js"></script>
 ```
 
-Or you can use these links to use the latest version - courtesy of [RawGit](https://rawgit.com) and [MaxCDN](https://maxcdn.com).
+Or you can use these links to the latest version - courtesy of [jsDelivr](https://jsdelivr.com).
 
 ```html
-<script src="https://cdn.rawgit.com/fpereiro/dale/e3d6f036c62a743eddc26b8322f5ff028c23615c/dale.js"></script>
-<script src="https://cdn.rawgit.com/fpereiro/teishi/76b60ec500fce36f32a079bba45d4996df075d1a/teishi.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@ac36810de20ee18d5d5077bd2ccb94628d621e58/dale.js"></script>
+<script src=""></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -975,7 +975,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.13.1
+teishi - v3.13.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
