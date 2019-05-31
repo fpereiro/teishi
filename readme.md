@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.13.2, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v3.14.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -828,7 +828,7 @@ function (request, response) {
 
 ## Helper functions
 
-teishi relies on nine helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
+teishi relies on ten helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
 
 ### teishi.t
 
@@ -875,7 +875,7 @@ If they receive invalid input, these two functions will return `false` instead o
 
 This function is useful when you want to pass an array or object to a function that will modify it *and* you want the array or object in question to remain modified outside of the scope of that function. [javascript passes objects and arrays by reference](http://stackoverflow.com/questions/13104494/does-javascript-pass-by-reference/13104500#13104500), so in this case you need to copy the array or object to avoid side effects.
 
-If `input` has any circular references, `teishi.c` will replace them a string with the form `'CIRCULAR REFERENCE: {{PATH}}'`, where `{{PATH}}` is the path to the object referred to in the circular reference. For example, if `input.prop1` refers to `input.prop2`, and `input.prop2` refers to `input.prop1`, `input.prop2` will be replaced with the string `'CIRCULAR REFERENCE: $root.prop1'`.
+If `input` has any [circular references](https://stackoverflow.com/questions/1493453/example-of-a-circular-reference-in-javascript), `teishi.c` will replace them with a string with the form `'[Circular]'`.
 
 If `input` is (or contains) an `arguments` pseudo-array, it will be copied into a standard array.
 
@@ -885,6 +885,10 @@ If `input` is (or contains) an `arguments` pseudo-array, it will be copied into 
 
 - If both arguments are simple, the strict equality check is used (`===`).
 - If both arguments are complex, 1) their types must be the same (as per `teishi.t`); 2) their keys must be the same; and 3) the values for each of the keys must fulfill the same equality conditions, whether they are simple or complex.
+
+### teishi.last
+
+`teishi.last` takes an array as input and returns its last element. If you pass an argument that is not an array, an error will be printed through `teishi.l` and the function will return `false`.
 
 ### teishi.time
 
@@ -975,7 +979,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.13.2
+teishi - v3.14.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1114,12 +1118,12 @@ After this, there's nothing left to do, so we close the function.
 
 `teishi.c` does two things: 1) copy an input; 2) eliminate any circular references within the copied input.
 
-The "public" interface of the function (if we allow that distinction, since in practice the user can pass extra arguments) takes a single argument, the `input` we want to copy. However, we define two "private" arguments (`seen` and `path`) that the function will use to pass information to recursive calls.
+The "public" interface of the function (if we allow that distinction, since in practice the user can pass extra arguments) takes a single argument, the `input` we want to copy. However, we define a private argument (`seen`) that the function will use to pass information to recursive calls.
 
 This function is recursive. On recursive calls, `input` won't represent the `input` that the user passed to the function, but rather one of the elements that are contained within the original `input`.
 
 ```javascript
-   teishi.c = function (input, path, seen) {
+   teishi.c = function (input, seen) {
 ```
 
 If `input` is not an array or object, we just return the `input` itself.
@@ -1128,63 +1132,7 @@ If `input` is not an array or object, we just return the `input` itself.
       if (teishi.simple (input)) return input;
 ```
 
-`path` and `seen` is where we store the information needed to 1) detect circular references; and 2) know where they point to. This is best seen with an example.
-
-When `teishi.c` is invoked for the first time (non-recursively) and it receives a complex input, it will initialize `path` and `seen`. Both are arrays.
-
-`path` will be initialized to `['$root']`, where `$root` is a placeholder for the outermost element passed to the function.
-
-```javascript
-      path = path || ['$root'];
-```
-
-`seen` will be initialized to an array with two elements, `path` (which at this point is `['$root']`) and `input`. What we're storing as the second element of `seen` is, effectively, a reference to `input`.
-
-```javascript
-      seen = seen || [path, input];
-```
-
-Now, how is this helpful to detect circular references? This is best explained by an example. Imagine that `input` is the following object:
-
-```javascript
-var input = {
-   'a': {
-      b: []
-   },
-   c: {},
-   d: 45
-}
-```
-
-No circular references here, yet. When we invoke `teishi.c` on this input, on recursive calls, these will be the values of `path` and `seen`:
-
-- When processing `input`:
-   `path` -> `['$root']`
-
-   `seen` -> `['$root', input]`.
-
-- When processing `input.a`:
-   `path` -> `['$root', 'a']`
-
-   `seen` -> `[['$root'], input, ['$root', 'a'], a]`.
-
-- When processing `input.a.b`:
-   `path` -> `['$root', 'a', 'b']`
-
-   `seen` -> `[['$root'], input, ['$root', 'a'], a, ['$root', 'a', 'b'], b]`.
-
-- When processing `input.c`:
-   `path` -> `['$root', 'c']`
-
-   `seen` -> `[['$root'], input, ['$root', 'c'], c]`
-
-- When processing `input.d`, since `d` is neither an object nor an array, `seen` and `path` will remain the same.
-
-As you can see, `path` is always an array with a succession of strings (or integers, in case an array contains arrays or objects). And `seen` is an array where we place an even amount of elements, the even element being the path to an object/array, and the odd element next to it being the corresponding reference to said object/array.
-
-The detection of circular references in `teishi.c` is best thought of as a path in a graph, from container object to contained one. For any point in the graph, we want to have the list of all containing nodes, and verify that none of them will be repeated.
-
-We detect the `inputType` of `input`. What we want to know here is if we're dealing with an array, an object, or an `arguments` pseudo-array - we want to treat the latter as an array.
+If we're here, we know our object is complex. We detect the `inputType` of `input`. What we want to know here is if we're dealing with an array, an object, or an `arguments` pseudo-array - we want to treat the latter as an array.
 
 We initialize the `output` variable to either an empty array or object, depending on the type of input.
 
@@ -1206,50 +1154,36 @@ If `v` is neither an array nor an object, we set `output [k]` to `v` and return 
          if (teishi.simple (v)) return output [k] = v;
 ```
 
-We loop through the elements of `seen` and check if `v` (an array/object contained within `input`) is in the list of arrays/objects that *contain* `input`. If that's the case, the loop will stop and the corresponding `path` element of the circular reference will be assigned to the variable `circular`. If no circular references are detected, `circular` will be equal to `undefined`.
+If we're here, `v` is a complex object itself.
 
-Notice that by adding the clause `k2 % 2 !== 0` we ignore the even elements of `seen`, which are only `path`s (instead of references to actual arrays or objects).
+`seen` is a list of references to objects/arrays that are parents of the current element (`v`) we are iterating. The first time we invoke this function, `seen` is undefined, so we initialize it to `[input]`. If `seen` already exists, we copy it (through the `concat` function, which returns a copy of the array to which it is applied).
+
+We store the `seen` array in a new local variable named `Seen`.
 
 ```javascript
-         var circular = dale.stopNot (seen, undefined, function (v2, k2) {
-            if (k2 % 2 !== 0 && v === v2) return seen [k2 - 1];
-         });
+         var Seen = seen ? seen.concat () : [input];
 ```
 
-If this element is not a circular reference, we do four things:
-
-- Concatenate the key corresponding to this element to the path, and push that path into `seen`.
-- Push the actual element into `seen`.
-- Call `teishi.c` recursively, passing `v`, `path` and a copy of `seen` as arguments, and set the result of that computation to `output [k]`.
-- Return from the inner function.
+If the element currently being iterated has already been seen, we found a circular reference! We set `output [k]` to a string of the form `[Circular]`.
 
 ```javascript
-         if (! circular) {
-            seen.push (path.concat ([k])) && seen.push (v);
-            return output [k] = teishi.c (v, path.concat ([k]), seen.concat ());
-         }
+         if (Seen.indexOf (v) !== -1) return output [k] = '[Circular]';
 ```
 
-If we are here, we have (finally) detected a circular reference. `v` shouldn't be contained in `input`, since it contains either `input` or another element that contains `input`.
-
-We will replace `v` by a string indicating a circular reference.
-
-You may ask: wouldn't doing this destroy the original `v`, which also *contains* `input`? I've asked myself that question, too. But it turns out that javascript passes arrays and objects by reference *as long as you don't replace them by a new object*. For example:
-
-```var a = [];```
-
-```var b = a;```
-
-```a.push (1); // b will now be [1]```
-
-```b = []; // a will still be [1]```
-
-Ok, back to the code. We set `output [k]` to a string that contains the path to the circular element.
-
-At this point, we've covered all cases, so we close the inner function.
+If we're here, `v` is not circular. We push it onto `seen`.
 
 ```javascript
-         output [k] = 'CIRCULAR REFERENCE: ' + circular.join ('.');
+         Seen.push (v);
+```
+
+We do a recursive call to `teishi.c`, where the new `input` will be `v` itself. Note we pass a copy of `path` and append to it the key `k`. Note also we pass the `seen` array as well.
+
+The result of this recursive call will be set to `output [k]`.
+
+This concludes the inner function.
+
+```javascript
+         return output [k] = teishi.c (v, Seen);
       });
 ```
 
@@ -1259,30 +1193,6 @@ We return the output. There's nothing else to do, so we close the function.
       return output;
    }
 ```
-
-How would this function work in practice? Going back to the sample `input` we defined above, let's create some circular references and then apply `teishi.c` to `input`, to see what we get.
-
-```javascript
-input.a.b [0] = input.a.b;
-input.a.b [1] = input.a;
-input.a.b [2] = input;
-
-teishi.c (input);
-```
-
-The result of the above invocation will be:
-
-```javascript
-{ a:
-   { b:
-      [ 'CIRCULAR REFERENCE: $root.a.b',
-        'CIRCULAR REFERENCE: $root.a',
-        'CIRCULAR REFERENCE: $root' ] } }
-  c: {},
-  d: 45 }
-```
-
-OK, enough of `teishi.c`! Let's move on to the next function.
 
 `teishi.eq` is a function that checks for deep equality between objects. It takes two arguments.
 
@@ -1321,6 +1231,17 @@ If a difference is found, this function will return `false`. If, however, both e
 ```javascript
          return teishi.eq (v, b [k]);
       }) === false ? false : true;
+   }
+```
+
+We define `teishi.last`, which will return the last element of the array which it receives as its first argument.
+
+This function will ignore all other arguments passed to it. If its first argument is not an array, we print an error and return `false`.
+
+```javascript
+   teishi.last = function (a) {
+      if (teishi.t (a) !== 'array') return teishi.l ('Input to teishi.last must be array but instead has type ' + teishi.t (a));
+      return a [a.length - 1];
    }
 ```
 

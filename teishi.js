@@ -1,5 +1,5 @@
 /*
-teishi - v3.13.2
+teishi - v3.14.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -60,26 +60,19 @@ Please refer to readme.md to read the annotated source.
       return array [array.length - 1];
    }
 
-   teishi.c = function (input, path, seen) {
+   teishi.c = function (input, seen) {
 
       if (teishi.simple (input)) return input;
-
-      path = path || ['$root'];
-      seen = seen || [path, input];
 
       var inputType = teishi.t (input, true);
       var output    = inputType === 'array' || inputType === 'arguments' ? [] : {};
 
       dale.do (input, function (v, k) {
          if (teishi.simple (v)) return output [k] = v;
-         var circular = dale.stopNot (seen, undefined, function (v2, k2) {
-            if (k2 % 2 !== 0 && v === v2) return seen [k2 - 1];
-         });
-         if (! circular) {
-            seen.push (path.concat ([k])) && seen.push (v);
-            return output [k] = teishi.c (v, path.concat ([k]), seen.concat ());
-         }
-         output [k] = 'CIRCULAR REFERENCE: ' + circular.join ('.');
+         var Seen = seen ? seen.concat () : [input];
+         if (Seen.indexOf (v) !== -1) return output [k] = '[Circular]';
+         Seen.push (v);
+         return output [k] = teishi.c (v, Seen);
       });
 
       return output;
@@ -92,6 +85,11 @@ Please refer to readme.md to read the annotated source.
       return dale.stop (a, false, function (v, k) {
          return teishi.eq (v, b [k]);
       }) === false ? false : true;
+   }
+
+   teishi.last = function (a) {
+      if (teishi.t (a) !== 'array') return teishi.l ('Input to teishi.last must be array but instead has type ' + teishi.t (a));
+      return a [a.length - 1];
    }
 
    teishi.time = function () {return new Date ().getTime ()}

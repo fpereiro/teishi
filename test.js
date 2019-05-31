@@ -1,5 +1,5 @@
 /*
-teishi - v3.13.2
+teishi - v3.14.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -500,6 +500,64 @@ To run the tests:
 
    tester (example27, {invalid1: 'moe', invalid2: 'larry', invalid3: 'curly', valid: 'iggy pop'});
 
+   function example28 (input) {
+      return teishi.v ([
+         ['input.time', input.time, 'integer'],
+         ['input.time', Date.now () - input.time, {max: 10}, teishi.test.range],
+         ['input.last0', input.last0, false, teishi.test.equal],
+         ['input.last1', input.last1, false, teishi.test.equal],
+         ['input.last2', input.last2, true, teishi.test.equal],
+      ]);
+   }
+
+   if (! example28 ({
+      time: teishi.time (),
+      last0: teishi.last (),
+      last1: teishi.last (1),
+      last2: teishi.last ([1, 2, true]),
+   })) throw new Error ('A test failed!');
+
+   var circ = [];
+   circ [0] = circ;
+
+   var cinput = {a: {b: []}};
+   cinput.a.b [0] = cinput.a.b;
+   cinput.a.b [1] = cinput.a;
+   cinput.a.b [2] = cinput;
+   cinput.a.b [3] = 1;
+
+   var bagocats = [{
+      hello: 'there',
+      otra: 'mas',
+      fun: fun,
+      other: true,
+      buffer: isNode ? (Buffer.from ? Buffer.from ('hello there') : new Buffer ('hello there', 'utf8')) : '',
+      circular:  circ,
+      circular2: cinput,
+   }, [/a/, /b/, {a: 'aa'}, [some, fun], 'c'], 'yep'];
+
+   function example29 () {
+      if (teishi.c (circ) [0] !== '[Circular]') throw new Error ('Circular reference not handled properly #1.');
+      var data = [["8FD885B8-B3CE-6E7B-E256-D483BF2F063D","Wylie","Donec.feugiat@mauris.ca","148-1720 Eu St.","Bharatpur","Rajasthan","Korea, South","-54.67525, -4.31423"],["85624A1C-AD8C-D599-C1B6-C0C41FA6E5B1","Bree","non@Sednecmetus.co.uk","6556 Ante Road","Częstochowa","Sląskie","Moldova","-17.70027, 13.07993"],["7F3FA315-309E-E13C-B936-4208668DBF30","Minerva","Mauris.magna.Duis@estac.com","5826 Ullamcorper Street","Sosnowiec","Sląskie","Nigeria","-18.53188, -2.3058"],["D023045D-AE4B-DA1B-690F-7E917E789E3E","Mary","Sed.nunc.est@ipsumdolor.co.uk","7013 Arcu St.","Algeciras","Andalucía","Uruguay","-4.27216, -40.74605"]];
+      if (! teishi.eq (data, teishi.c (data))) throw new Error ('Object not copied properly #1');
+      if (data === teishi.c (data)) throw new Error ('Object not copied properly #2');
+      if (data [0] === teishi.c (data [0])) throw new Error ('Object not copied properly #3');
+      data.push ([]);
+      teishi.last (data) [0] = teishi.last (data);
+      if (teishi.c (data) [4] [0] !== '[Circular]') throw new Error ('Circular reference not handled properly #2.');
+      data.push ({});
+      teishi.last (data).up = teishi.last (data);
+      if (! teishi.eq (teishi.last (teishi.c (data)), {up: '[Circular]'})) throw new Error ('Circular reference not handled properly #3.');
+      if (! teishi.eq (teishi.c ({a: 'b', c: circ}), {a: 'b', c: ['[Circular]']})) throw new Error ('Circular reference not handled properly #4.');
+      if (! teishi.eq (teishi.c (cinput), {a: {b: ['[Circular]', '[Circular]', '[Circular]', 1]}})) throw new Error ('Circular reference not handled properly #5.');
+      if (! teishi.eq ([[{a: 'a'}]], teishi.c ([[{a: 'a'}]]))) throw new Error ('Circular reference not handled properly #6.');
+      var bcopy = teishi.c (bagocats);
+      if (bcopy [2] !== 'yep' || ! bcopy [1] || bcopy [1].length !== 5 || ! bcopy [1] [3] || bcopy [1] [3].length !== 2 || bcopy [1] [3] [0] !== some || bcopy [1] [3] [1] !== fun) throw new Error ('Circular reference not handled properly #6.');
+      if (! teishi.eq (bcopy [0].circular, ['[Circular]'])) throw new Error ('Circular reference not handled properly #7.');
+      if (! teishi.eq (bcopy [0].circular2, {a: {b: ['[Circular]', '[Circular]', '[Circular]', 1]}})) throw new Error ('Circular reference not handled properly #8.');
+   }
+
+   example29 ();
 
    function some (e, f, g) {
       // Comment
@@ -518,22 +576,14 @@ To run the tests:
       return d;
    }
 
-   if (isNode) {
-      teishi.l (['hello', 'there', some, 'you', [{
-         hello: 'there',
-         otra: 'mas',
-         fun: fun,
-         other: true,
-         buffer: new Buffer ('hello there', 'utf8'),
-      }, [/a/, /b/, {a: 'aa'}, [some, fun], 'c'], 'yep']]);
-   }
+   teishi.l (bagocats)
 
    teishi.v ('Check', [
       ['aaa', 1, 'string']
    ], function (error) {
       if (error) {
-         if (teishi.perf !== false) teishi.perf = new Date ().getTime () - startTime;
-         teishi.l ('Finished', 'All tests ran successfully!');
+         if (teishi.perf !== false) teishi.perf = teishi.time () - startTime;
+         teishi.l ('Finished', 'All tests ran successfully in ' + teishi.perf + 'ms!');
       }
       else       teishi.l ('There was an error with the apres function!');
    });
