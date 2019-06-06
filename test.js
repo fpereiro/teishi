@@ -1,5 +1,5 @@
 /*
-teishi - v3.14.0
+teishi - v3.14.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -507,6 +507,7 @@ To run the tests:
          ['input.last0', input.last0, false, teishi.test.equal],
          ['input.last1', input.last1, false, teishi.test.equal],
          ['input.last2', input.last2, true, teishi.test.equal],
+         ['input.last3', input.last3, 3, teishi.test.equal],
       ]);
    }
 
@@ -515,6 +516,7 @@ To run the tests:
       last0: teishi.last (),
       last1: teishi.last (1),
       last2: teishi.last ([1, 2, true]),
+      last3: (function () {return teishi.last (arguments)}) (1, 3),
    })) throw new Error ('A test failed!');
 
    var circ = [];

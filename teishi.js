@@ -1,5 +1,5 @@
 /*
-teishi - v3.14.0
+teishi - v3.14.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -55,11 +55,6 @@ Please refer to readme.md to read the annotated source.
       return ! teishi.simple (input);
    }
 
-   teishi.last = function (array) {
-      if (teishi.t (array) !== 'array') return false;
-      return array [array.length - 1];
-   }
-
    teishi.c = function (input, seen) {
 
       if (teishi.simple (input)) return input;
@@ -88,7 +83,7 @@ Please refer to readme.md to read the annotated source.
    }
 
    teishi.last = function (a) {
-      if (teishi.t (a) !== 'array') return teishi.l ('Input to teishi.last must be array but instead has type ' + teishi.t (a));
+      if (['array', 'arguments'].indexOf (teishi.t (a, true)) === -1) return teishi.l ('Input to teishi.last must be array or arguments but instead has type ' + teishi.t (a, true));
       return a [a.length - 1];
    }
 

@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.14.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v3.14.1, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -163,7 +163,7 @@ Or you can use these links to the latest version - courtesy of [jsDelivr](https:
 
 ```html
 <script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@ac36810de20ee18d5d5077bd2ccb94628d621e58/dale.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@0365cedbe6d4e72767af587ac703fa37722c8c05/teishi.js"></script>
+<script src="https://></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -890,6 +890,8 @@ If `input` is (or contains) an `arguments` pseudo-array, it will be copied into 
 
 `teishi.last` takes an array as input and returns its last element. If you pass an argument that is not an array, an error will be printed through `teishi.l` and the function will return `false`.
 
+This function can also receive an `arguments` pseudo-array.
+
 ### teishi.time
 
 A function that returns the current date in milliseconds.
@@ -979,7 +981,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.14.0
+teishi - v3.14.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1240,7 +1242,7 @@ This function will ignore all other arguments passed to it. If its first argumen
 
 ```javascript
    teishi.last = function (a) {
-      if (teishi.t (a) !== 'array') return teishi.l ('Input to teishi.last must be array but instead has type ' + teishi.t (a));
+      if (['array', 'arguments'].indexOf (teishi.t (a, true)) === -1) return teishi.l ('Input to teishi.last must be array or arguments but instead has type ' + teishi.t (a, true));
       return a [a.length - 1];
    }
 ```
