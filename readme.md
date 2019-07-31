@@ -163,7 +163,7 @@ Or you can use these links to the latest version - courtesy of [jsDelivr](https:
 
 ```html
 <script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@9fe30369a2acef87ed062131c8634d858b8f3143/dale.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@/teishi.js></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@8442dc09f0518b93fc9b5fbdf5268d589b7d54fd/teishi.js></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -1113,6 +1113,12 @@ If `type` is `number`, we distinguish between `nan`, `infinity`, `integer` and `
       }
 ```
 
+We test whether `value` is `null`.
+
+```javascript
+      if (value === null) return 'null';
+```
+
 If we're here, `type` is `object`, so now we want to find out which kind of object we're dealing with. We will do the following:
 
 - Stringify `value` through the function `Object.prototype.toString` and assign it to `type`.
@@ -1123,10 +1129,10 @@ If we're here, `type` is `object`, so now we want to find out which kind of obje
       type = Object.prototype.toString.call (value).replace ('[object ', '').replace (']', '').toLowerCase ();
 ```
 
-Now, if `type` is `array`, `date` or `null`, we simply return the `type`. And if `type` is `regexp`, we return `regex` instead.
+Now, if `type` is `array` or `date`, we simply return the `type`. And if `type` is `regexp`, we return `regex` instead.
 
 ```javascript
-      if (type === 'array' || type === 'date' || type === 'null') return type;
+      if (type === 'array' || type === 'date') return type;
       if (type === 'regexp') return 'regex';
 ```
 
