@@ -1,5 +1,5 @@
 /*
-teishi - v3.14.1
+teishi - v4.0.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -26,6 +26,12 @@ To run the tests:
    var dale   = isNode ? require ('dale')        : window.dale;
    var teishi = isNode ? require ('./teishi.js') : window.teishi;
 
+   var printError = function (error) {
+      if (isNode) dale.clog (error);
+      else        alert     (error);
+      throw new Error (error);
+   }
+
    var tester = function (fun, inputs) {
       var funame    = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$1');
       var arglength = (fun + '').replace (/^function\s+([a-zA-Z0-9_]+)\s*(\([^\)]*\))(.|[\r\n])+$/, '$2').split (',').length;
@@ -33,32 +39,28 @@ To run the tests:
          var result = arglength < 2 ? fun.call (fun, v) : fun.apply (fun, v);
          var mismatch = (k.match (/^valid/) && result === false) || (k.match (/^invalid/) && result === true);
          teishi.l (funame + ':' + k, result);
-         console.log ('');
+         dale.clog ('');
          if (mismatch) {
             teishi.l ('Mismatch!', 'Aborting test now');
             teishi.perf = false;
-            throw new Error ('A test failed!');
+            printError ('A test failed!');
          }
       });
    }
 
    function myFunctionOld (input) {
       if (teishi.t (input) !== 'array' && teishi.t (input) !== 'undefined') {
-         console.log ('Input to myFunction must be either an array or undefined, but instead is', input);
-         return false;
+         return teishi.l ('Input to myFunction must be either an array or undefined, but instead is', input);
       }
 
       if (teishi.t (input) === 'array') {
          if (input.length !== 3) {
-            console.log ('Input to myFunction must be an array of length 3, but instead has length', input.length, 'and is', JSON.stringify (input));
-            return false;
+            return teishi.l ('Input to myFunction must be an array of length 3, but instead has length', input.length, 'and is', JSON.stringify (input));
          }
-         for (var item in input) {
-            if (teishi.t (input [item]) !== 'string') {
-               console.log ('Each item of the input to myFunction must be a string, but instead is', input [item]);
-               return false;
-            }
-         }
+         return dale.stopNot (input, true, function (v) {
+            if (teishi.t (v) === 'string') return true;
+            return teishi.l ('Each item of the input to myFunction must be a string, but instead is', v, 'with type', teishi.t (v));
+         });
       }
 
       return true;
@@ -87,7 +89,7 @@ To run the tests:
    }
 
    tester (myFunctionOld, myFunctionInput);
-   tester (myFunction, myFunctionInput);
+   tester (myFunction,    myFunctionInput);
 
    function example1 (a, b) {
       if (teishi.stop ('example1', [
@@ -211,7 +213,7 @@ To run the tests:
    });
 
    function example10 (input) {
-      return teishi.v (['length of input', input.length, {cant: 1, touch: 2, this: 3}, 'oneOf', teishi.test.equal]);
+      return teishi.v (['length of input', input.length, {cant: 1, touch: 2, 'this': 3}, 'oneOf', teishi.test.equal]);
    }
 
    tester (example10, {
@@ -338,7 +340,7 @@ To run the tests:
       invalid: ['a'],
       valid1: /aaaa/,
       valid2: function () {},
-      valid3: ['a', 'b', 'c'],
+      valid3: ['a', 'b', 'c']
    });
 
    function example20 (options) {
@@ -379,7 +381,7 @@ To run the tests:
       valid_should_be_invalid1: ['almost a valid widget', 'definitely not a sprocket'],
       invalid2: ['valid widget', 'definitely not a sprocket'],
       valid1: ['valid widget', {}],
-      valid2: ['valid widget', {hi: 'handsome'}],
+      valid2: ['valid widget', {hi: 'handsome'}]
    });
 
    function example21 (widget, sprocket) {
@@ -393,7 +395,7 @@ To run the tests:
       invalid1: ['almost a valid widget', 'definitely not a sprocket'],
       invalid2: ['valid widget', 'definitely not a sprocket'],
       valid1: ['valid widget', {}],
-      valid2: ['valid widget', {hi: 'handsome'}],
+      valid2: ['valid widget', {hi: 'handsome'}]
    });
 
    function validateTeishiRule (rule) {
@@ -415,7 +417,7 @@ To run the tests:
                   [teishi.t (rule [4]) === 'string', ['multi operator', rule [4], ['each', 'oneOf', 'eachOf'], 'oneOf', teishi.test.equal]],
                   [rule [3] !== undefined && rule [4] !== undefined, [
                      [['type of multi operator', 'type of test function'], teishi.t (rule [3]), teishi.t (rule [4]), teishi.test.notEqual],
-                  ]],
+                  ]]
                ]]
             }
          ]]
@@ -503,11 +505,11 @@ To run the tests:
    function example28 (input) {
       return teishi.v ([
          ['input.time', input.time, 'integer'],
-         ['input.time', Date.now () - input.time, {max: 10}, teishi.test.range],
+         ['input.time', teishi.time () - input.time, {max: 10}, teishi.test.range],
          ['input.last0', input.last0, false, teishi.test.equal],
          ['input.last1', input.last1, false, teishi.test.equal],
          ['input.last2', input.last2, true, teishi.test.equal],
-         ['input.last3', input.last3, 3, teishi.test.equal],
+         ['input.last3', input.last3, 3, teishi.test.equal]
       ]);
    }
 
@@ -516,8 +518,8 @@ To run the tests:
       last0: teishi.last (),
       last1: teishi.last (1),
       last2: teishi.last ([1, 2, true]),
-      last3: (function () {return teishi.last (arguments)}) (1, 3),
-   })) throw new Error ('A test failed!');
+      last3: (function () {return teishi.last (arguments)}) (1, 3)
+   })) printError ('A test failed!');
 
    var circ = [];
    circ [0] = circ;
@@ -535,28 +537,28 @@ To run the tests:
       other: true,
       buffer: isNode ? (Buffer.from ? Buffer.from ('hello there') : new Buffer ('hello there', 'utf8')) : '',
       circular:  circ,
-      circular2: cinput,
+      circular2: cinput
    }, [/a/, /b/, {a: 'aa'}, [some, fun], 'c'], 'yep'];
 
    function example29 () {
-      if (teishi.c (circ) [0] !== '[Circular]') throw new Error ('Circular reference not handled properly #1.');
+      if (teishi.c (circ) [0] !== '[Circular]') printError ('Circular reference not handled properly #1.');
       var data = [["8FD885B8-B3CE-6E7B-E256-D483BF2F063D","Wylie","Donec.feugiat@mauris.ca","148-1720 Eu St.","Bharatpur","Rajasthan","Korea, South","-54.67525, -4.31423"],["85624A1C-AD8C-D599-C1B6-C0C41FA6E5B1","Bree","non@Sednecmetus.co.uk","6556 Ante Road","Częstochowa","Sląskie","Moldova","-17.70027, 13.07993"],["7F3FA315-309E-E13C-B936-4208668DBF30","Minerva","Mauris.magna.Duis@estac.com","5826 Ullamcorper Street","Sosnowiec","Sląskie","Nigeria","-18.53188, -2.3058"],["D023045D-AE4B-DA1B-690F-7E917E789E3E","Mary","Sed.nunc.est@ipsumdolor.co.uk","7013 Arcu St.","Algeciras","Andalucía","Uruguay","-4.27216, -40.74605"]];
-      if (! teishi.eq (data, teishi.c (data))) throw new Error ('Object not copied properly #1');
-      if (data === teishi.c (data)) throw new Error ('Object not copied properly #2');
-      if (data [0] === teishi.c (data [0])) throw new Error ('Object not copied properly #3');
+      if (! teishi.eq (data, teishi.c (data))) printError ('Object not copied properly #1');
+      if (data === teishi.c (data)) printError ('Object not copied properly #2');
+      if (data [0] === teishi.c (data [0])) printError ('Object not copied properly #3');
       data.push ([]);
       teishi.last (data) [0] = teishi.last (data);
-      if (teishi.c (data) [4] [0] !== '[Circular]') throw new Error ('Circular reference not handled properly #2.');
+      if (teishi.c (data) [4] [0] !== '[Circular]') printError ('Circular reference not handled properly #2.');
       data.push ({});
       teishi.last (data).up = teishi.last (data);
-      if (! teishi.eq (teishi.last (teishi.c (data)), {up: '[Circular]'})) throw new Error ('Circular reference not handled properly #3.');
-      if (! teishi.eq (teishi.c ({a: 'b', c: circ}), {a: 'b', c: ['[Circular]']})) throw new Error ('Circular reference not handled properly #4.');
-      if (! teishi.eq (teishi.c (cinput), {a: {b: ['[Circular]', '[Circular]', '[Circular]', 1]}})) throw new Error ('Circular reference not handled properly #5.');
-      if (! teishi.eq ([[{a: 'a'}]], teishi.c ([[{a: 'a'}]]))) throw new Error ('Circular reference not handled properly #6.');
+      if (! teishi.eq (teishi.last (teishi.c (data)), {up: '[Circular]'})) printError ('Circular reference not handled properly #3.');
+      if (! teishi.eq (teishi.c ({a: 'b', c: circ}), {a: 'b', c: ['[Circular]']})) printError ('Circular reference not handled properly #4.');
+      if (! teishi.eq (teishi.c (cinput), {a: {b: ['[Circular]', '[Circular]', '[Circular]', 1]}})) printError ('Circular reference not handled properly #5.');
+      if (! teishi.eq ([[{a: 'a'}]], teishi.c ([[{a: 'a'}]]))) printError ('Circular reference not handled properly #6.');
       var bcopy = teishi.c (bagocats);
-      if (bcopy [2] !== 'yep' || ! bcopy [1] || bcopy [1].length !== 5 || ! bcopy [1] [3] || bcopy [1] [3].length !== 2 || bcopy [1] [3] [0] !== some || bcopy [1] [3] [1] !== fun) throw new Error ('Circular reference not handled properly #6.');
-      if (! teishi.eq (bcopy [0].circular, ['[Circular]'])) throw new Error ('Circular reference not handled properly #7.');
-      if (! teishi.eq (bcopy [0].circular2, {a: {b: ['[Circular]', '[Circular]', '[Circular]', 1]}})) throw new Error ('Circular reference not handled properly #8.');
+      if (bcopy [2] !== 'yep' || ! bcopy [1] || bcopy [1].length !== 5 || ! bcopy [1] [3] || bcopy [1] [3].length !== 2 || bcopy [1] [3] [0] !== some || bcopy [1] [3] [1] !== fun) printError ('Circular reference not handled properly #6.');
+      if (! teishi.eq (bcopy [0].circular, ['[Circular]'])) printError ('Circular reference not handled properly #7.');
+      if (! teishi.eq (bcopy [0].circular2, {a: {b: ['[Circular]', '[Circular]', '[Circular]', 1]}})) printError ('Circular reference not handled properly #8.');
    }
 
    example29 ();
@@ -580,12 +582,25 @@ To run the tests:
 
    teishi.l (bagocats)
 
+   var d = new Date ().getTime ();
+
+   if (teishi.time (d) !== new Date (d).getTime ())             printError ('teishi.time error #1.');
+   if (Math.abs (teishi.time () - new Date ().getTime ()) > 20) printError ('teishi.time error #2.');
+   if (teishi.t (teishi.time (d)) !== 'integer')                printError ('teishi.time error #3.');
+   if (teishi.t (teishi.time ()) !== 'integer')                 printError ('teishi.time error #4.');
+   if (teishi.t (teishi.time (/a/)) !== 'nan')                  printError ('teishi.time error #5.');
+
+   dale.go ([[/regex/, 'regex'], [function () {}, 'function'], [new Date, 'date'], [Infinity, 'infinity'], [NaN, 'nan'], [1.5, 'float'], [0, 'integer'], ['do this', 'string'], [[], 'array'], [{}, 'object'], [null, 'null'], [undefined, 'undefined']], function (v) {
+      if (teishi.t (v [0]) !== v [1]) printError ('teishi.t type error with type ' + v [1]);
+   });
+
    teishi.v ('Check', [
       ['aaa', 1, 'string']
    ], function (error) {
       if (error) {
          if (teishi.perf !== false) teishi.perf = teishi.time () - startTime;
-         teishi.l ('Finished', 'All tests ran successfully in ' + teishi.perf + 'ms!');
+         if (isNode) teishi.l ('Finished', 'All tests ran successfully in ' + teishi.perf + 'ms!');
+         else        alert ('All tests passed successfully!');
       }
       else       teishi.l ('There was an error with the apres function!');
    });

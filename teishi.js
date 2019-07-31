@@ -1,5 +1,5 @@
 /*
-teishi - v3.14.1
+teishi - v4.0.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -17,10 +17,23 @@ Please refer to readme.md to read the annotated source.
    if (isNode) var teishi = exports;
    else        var teishi = window.teishi = {};
 
+   // *** INDEXOF POLYFILL ***
+
+   if (! Array.prototype.indexOf) Array.prototype.indexOf = function (element, fromIndex) {
+      var result = dale.stopNot (this, undefined, function (v, k) {
+         if (fromIndex && k < fromIndex) return;
+         if (element === v) return k;
+      });
+      return result === undefined ? -1 : result;
+   }
+
    // *** HELPER FUNCTIONS ***
+
+   var argdetect = (function () {return Object.prototype.toString.call (arguments).match ('arguments')}) ();
 
    teishi.t = function (value, objectType) {
       var type = typeof value;
+      if (type === 'function') return Object.prototype.toString.call (value).match (/regexp/i) ? 'regex' : 'function';
       if (type !== 'object' && type !== 'number') return type;
       if (value instanceof Array) return 'array';
       if (type === 'number') {
@@ -29,10 +42,11 @@ Please refer to readme.md to read the annotated source.
          else if (value % 1 === 0)    return 'integer';
          else                         return 'float';
       }
+      if (value === null) return 'null';
       type = Object.prototype.toString.call (value).replace ('[object ', '').replace (']', '').toLowerCase ();
-      if (type === 'array' || type === 'date' || type === 'null') return type;
+      if (type === 'array' || type === 'date') return type;
       if (type === 'regexp') return 'regex';
-      if (objectType) return type;
+      if (objectType) return argdetect ? type : (teishi.t (value.callee) === 'function' ? 'arguments' : type);
       return 'object';
    }
 
@@ -62,10 +76,10 @@ Please refer to readme.md to read the annotated source.
       var inputType = teishi.t (input, true);
       var output    = inputType === 'array' || inputType === 'arguments' ? [] : {};
 
-      dale.do (input, function (v, k) {
+      dale.go (input, function (v, k) {
          if (teishi.simple (v)) return output [k] = v;
          var Seen = seen ? seen.concat () : [input];
-         if (Seen.indexOf (v) !== -1) return output [k] = '[Circular]';
+         if (Seen.indexOf (v) > -1) return output [k] = '[Circular]';
          Seen.push (v);
          return output [k] = teishi.c (v, Seen);
       });
@@ -87,7 +101,7 @@ Please refer to readme.md to read the annotated source.
       return a [a.length - 1];
    }
 
-   teishi.time = function () {return new Date ().getTime ()}
+   teishi.time = function (d) {return arguments.length ? new Date (d).getTime () : new Date ().getTime ()}
 
    var lastColor, ansi = {
       end:   function () {return isNode ? '\033[0m'  : ''},
@@ -112,14 +126,14 @@ Please refer to readme.md to read the annotated source.
 
          if (inputType === 'object' && Object.prototype.toString.call (input) === '[object Arguments]') inputType = 'array';
 
-         var indent = depth < 2 ? '' : '\n' + dale.do (dale.times (depth - 1), function (v) {return '   '}).join ('');
+         var indent = depth < 2 ? '' : '\n' + dale.go (dale.times (depth - 1), function (v) {return '   '}).join ('');
 
          if (depth > 0) {
             if (inputType === 'array')  output += ansi.white () + '[';
             else                        output += ansi.white () + '{';
          }
 
-         dale.do (input, function (v, k) {
+         dale.go (input, function (v, k) {
 
             var typeV = teishi.t (v);
 
@@ -154,7 +168,8 @@ Please refer to readme.md to read the annotated source.
 
       }) (teishi.c (arguments));
 
-      console.log ('(' + new Date ().toISOString () + ')', output + ansi.end ());
+      var d = new Date ();
+      dale.clog ('(' + d [d.toISOString ? 'toISOString' : 'toString'] () + ')', output + ansi.end ());
       return false;
    }
 
@@ -204,7 +219,7 @@ Please refer to readme.md to read the annotated source.
                                        error [index++] = 'is';
                                        error [index++] = compare;
 
-         dale.do (clauses [1], function (v) {
+         dale.go (clauses [1], function (v) {
             error [index++] = typeof v !== 'function' ? v : v (compare, to);
          });
          return error;
@@ -296,7 +311,7 @@ Please refer to readme.md to read the annotated source.
 
    var reply = function (error, apres) {
       if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
-      error = dale.do (error, function (v) {
+      error = dale.go (error, function (v) {
          return teishi.complex (v) ? teishi.s (v) : v + '';
       }).join (' ');
       if (apres === true) return error;
@@ -341,11 +356,11 @@ Please refer to readme.md to read the annotated source.
 
       var typeCompare = teishi.t (rule [1], true), typeTo = teishi.t (rule [2], true);
 
-      if ((multi === 'each' || multi === 'eachOf') && ((typeCompare === 'array' && rule [1].length === 0) || (typeCompare === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
+      if ((multi === 'each' || multi === 'eachOf') && ((typeCompare === 'array' && rule [1].length === 0) || (typeCompare === 'object' && dale.keys (rule [1]).length === 0) || rule [1] === undefined)) {
          return true;
       }
 
-      if ((multi === 'oneOf' || multi === 'eachOf') && ((typeTo === 'array' && rule [2].length === 0) || (typeTo === 'object' && Object.keys (rule [2]).length === 0) || rule [2] === undefined)) {
+      if ((multi === 'oneOf' || multi === 'eachOf') && ((typeTo === 'array' && rule [2].length === 0) || (typeTo === 'object' && dale.keys (rule [2]).length === 0) || rule [2] === undefined)) {
          result = ['To field of teishi rule is', rule.to, 'but multi attribute', multi, 'requires it to be non-empty, at teishi step', rule];
       }
 

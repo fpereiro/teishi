@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v3.14.1, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v4.0.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 ## Usage examples
 
@@ -162,21 +162,21 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 Or you can use these links to the latest version - courtesy of [jsDelivr](https://jsdelivr.com).
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@ac36810de20ee18d5d5077bd2ccb94628d621e58/dale.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@be190633770702ae0b788825cbc8a6cc4a88372d/teishi.js></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@9fe30369a2acef87ed062131c8634d858b8f3143/dale.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@/teishi.js></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
 
-teishi is pure ES5 javascript and it should work in any version of node.js (tested in v0.8.0 and above). Browser compatibility is as follows:
+teishi should work in any version of node.js (tested in v0.8.0 and above). Browser compatibility has been tested in the following browsers:
 
-- Chrome 15 (released 2011/10/25) and above.
-- Firefox 22 (released 2013/02/23) and above.
-- Safari 5.1 (released 2011/07/20) and above.
-- Internet Explorer 9 (released 2011/03/14) and above.
-- Microsoft Edge 14 (released 2016/02/19) and above.
-- Opera 11.6 (released 2011/12/07) and above.
-- Yandex 14.12 (released 2014/12/11) and above.
+- Google Chrome 15 and above.
+- Mozilla Firefox 3 and above.
+- Safari 4 and above.
+- Internet Explorer 6 and above.
+- Microsoft Edge 14 and above.
+- Opera 10.6 and above.
+- Yandex 14.12 and above.
 
 The author wishes to thank [Browserstack](https://browserstack.com) for providing tools to test cross-browser compatibility.
 
@@ -894,7 +894,7 @@ This function can also receive an `arguments` pseudo-array.
 
 ### teishi.time
 
-A function that returns the current date in milliseconds.
+A function that returns the current date in milliseconds. If you pass a single argument to it, the date will be constructed with that argument instead of representing the current date.
 
 ### teishi.l
 
@@ -905,6 +905,7 @@ Why use `teishi.l` instead of `console.log`?
 - Complex values (arrays and objects) are expanded, so you can print nested objects without having to stringify them.
 - It prints a timestamp that can be helpful when profiling or debugging code.
 - You save three keystrokes every time you invoke this function.
+- Defaults to `alert` for very old browsers that don't support `console.log`.
 
 `teishi.l` takes one or more arguments, of any type. If the first argument is a string, and there's more than one argument passed to `teishi.l`, the first argument will be treated as a `label`, which is just some text with a different background color, followed by a colon (`:`).
 
@@ -975,13 +976,13 @@ For more information, please refer to the annotated source code below, where I d
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 390 lines long.
+The complete source code is contained in `teishi.js`. It is about 400 lines long.
 
 Below is the annotated source.
 
 ```javascript
 /*
-teishi - v3.14.1
+teishi - v4.0.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1016,6 +1017,42 @@ This is the most succinct form I found to export an object containing all the pu
    else        var teishi = window.teishi = {};
 ```
 
+### `indexOf` polyfill
+
+To provide compatibility with older browsers, teishi provides its own `indexOf` [polyfill](https://en.wikipedia.org/wiki/Polyfill_(programming)) for arrays. If the method is already defined (as it will be on any [ES5 compatible browser](https://caniuse.com/es5)), the polyfill won't be set. You can also override it by loading your own polyfill before loading teishi.
+
+The function takes two arguments, `element` and `fromIndex`.
+
+```javascript
+   if (! Array.prototype.indexOf) Array.prototype.indexOf = function (element, fromIndex) {
+```
+
+Within the function, `this` will refer to the array on which we're applying the operation. We iterate its elements using `dale.stopNot`, stopping when we find the first value that is not undefined.
+
+```javascript
+      var result = dale.stopNot (this, undefined, function (v, k) {
+```
+
+If `fromIndex` is present and it is larger than the index of the element currently being scanned, we ignore the element.
+
+```javascript
+         if (fromIndex && k < fromIndex) return;
+```
+
+If we found an element in the array that is equal to `element`, we return the index.
+
+```javascript
+         if (element === v) return k;
+      });
+```
+
+If `result` is `undefined`, we could not find `element`, so we return -1. Otherwise, we return `result` which contains the index of`element` within the array. There's nothing else, so we close the function.
+
+```javascript
+      return result === undefined ? -1 : result;
+   }
+```
+
 ### Helper functions
 
 We start by defining `teishi.t`, by far the most useful function of the bunch. This function is inspired on [Douglas Crockford's remedial type function](http://javascript.crockford.com/remedial.html).
@@ -1025,7 +1062,15 @@ The purpose of `teishi.t` is to create an improved version of `typeof`. The impr
 - Distinguish between `object`, `array`, `regex`, `date` and `null` (all of which return `object` in `typeof`).
 - Distinguish between types of numbers: `nan`, `infinity`, `integer` and `float` (all of which return `number` in `typeof`).
 
-`type` takes a single argument (of any type, naturally) and returns a string which can be any of: `nan`, `infinity`, `integer`, `float`, `array`, `object`, `function`, `string`, `regex`, `date`, `null` and `undefined`.
+Before we define `teishi.t`, we define `argdetect`, a local variable that will be `true` in most javascript engines. In Internet Explorer 8 and below, however, it is not possible to get the type of the prototype of an `arguments` pseudo-array, hence the definition of this variable (which will be used in `type` and also once more later).
+
+The variable gets its value from a self-execution anonymous function. We need to do this since the `arguments` pseudo-array is only defined in the context of a function.
+
+```javascript
+   var argdetect = (function () {return Object.prototype.toString.call (arguments).match ('arguments')}) ();
+```
+
+`teishi.t` takes a single argument (of any type, naturally) and returns a string which can be any of: `nan`, `infinity`, `integer`, `float`, `array`, `object`, `function`, `string`, `regex`, `date`, `null` and `undefined`.
 
 If we pass a truthy second argument to `teishi.t`, and `input` turns out to be an object, `teishi.t` will return the lowercased name of the class of the object (which, for example, can be `object` for object literals, `arguments` for `arguments` pseudo-arrays, and other, user-created classes).
 
@@ -1039,7 +1084,13 @@ We first apply `typeof` to `value`.
       var type = typeof value;
 ```
 
-`teishi.t` will only a result different from `typeof` if `type` is neither `object` nor `number`. If it's not the case, we `return` the `type`.
+In Safari 5 and below, `typeof` returns `function` for regexes, so we need to perform instead a check using `Object.prototype.toString`.
+
+```javascript
+      if (type === 'function') return Object.prototype.toString.call (value).match (/regexp/i) ? 'regex' : 'function';
+```
+
+Except for the exception of regexes in Safari we just saw above, `teishi.t` will only a result different from `typeof` if `type` is neither `object` nor `number`. If it's not the case, we `return` the `type`.
 
 ```javascript
       if (type !== 'object' && type !== 'number') return type;
@@ -1083,10 +1134,16 @@ You may ask: why did we check for `array`, if we already covered this case befor
 
 Now, if the function received a truthy second argument, we want to return the exact class name of this object. In that case, we return `type`. Otherwise, we just return `object`.
 
+Notice however that if `argdetect` is false (which means we're in Internet Explorer 8 and below), we will perform an extra check on `value.callee` - if it is of type `function`, we consider the object to be an `arguments` pseudo-array; there's no other way to check for this type, to the best of my knowledge.
+
+
+```javascript
+      if (objectType) return argdetect ? type : (type (value.callee) === 'function' ? 'arguments' : type);
+```
+
 After this, there's nothing left to do, so we close the function.
 
 ```javascript
-      if (objectType) return type;
       return 'object';
    }
 ```
@@ -1147,7 +1204,7 @@ We iterate through the elements of `input`.
 
 
 ```javascript
-      dale.do (input, function (v, k) {
+      dale.go (input, function (v, k) {
 ```
 
 If `v` is neither an array nor an object, we set `output [k]` to `v` and return from this inner function.
@@ -1169,7 +1226,7 @@ We store the `seen` array in a new local variable named `Seen`.
 If the element currently being iterated has already been seen, we found a circular reference! We set `output [k]` to a string of the form `[Circular]`.
 
 ```javascript
-         if (Seen.indexOf (v) !== -1) return output [k] = '[Circular]';
+         if (Seen.indexOf (v) > -1) return output [k] = '[Circular]';
 ```
 
 If we're here, `v` is not circular. We push it onto `seen`.
@@ -1247,10 +1304,10 @@ This function will ignore all other arguments passed to it. If its first argumen
    }
 ```
 
-We define `teishi.time`, which will return the current date in milliseconds.
+We define `teishi.time`, which will return the current date in milliseconds. If you pass an argument to this function, it will be passed in turn to the internal invocation of `new Date`; in this way, you can get the timestamp of a date other than one representing the present moment.
 
 ```javascript
-   teishi.time = function () {return Date.now ()}
+   teishi.time = function (d) {return arguments.length ? new Date (d).getTime () : new Date ().getTime ()}
 ```
 
 We define two local variables useful for `teishi.l`, defined below:
@@ -1310,6 +1367,7 @@ We will now define `teishi.l` which is teishi's wrapper for console.log. The imp
 - Time offset for profiling purposes.
 - More compact indentation/newline rules for printing nested objects.
 - Stringify functions and print their first 150 characters only.
+- Defaults to `alert` for very old browsers that don't support `console.log`.
 
 ```javascript
    teishi.l = function () {
@@ -1346,7 +1404,7 @@ If `input` is an `arguments` pseudo-array, we will set `inputType` to `'array'`.
 We define a local variable `indent`. If `depth` is less than 2, we don't want to indent anything, so we will set it to an empty string. Otherwise, we will set it to be a newline (`\n`) followed by (depth - 1) * 3 spaces (for example, if `depth` is 2, then `indent` will have 3 spaces).
 
 ```javascript
-         var indent = depth < 2 ? '' : '\n' + dale.do (dale.times (depth - 1), function (v) {return '   '}).join ('');
+         var indent = depth < 2 ? '' : '\n' + dale.go (dale.times (depth - 1), function (v) {return '   '}).join ('');
 ```
 
 If `depth` is larger than 0, we add an opening `[` or `{`, depending on whether `inputType` is `array` or `object`. Notice that this assumes that `inputType` is always either of these. Because of how we invoke this function the first time, and how we invoke it recursively, this will always be the case.
@@ -1361,7 +1419,7 @@ If `depth` is larger than 0, we add an opening `[` or `{`, depending on whether 
 We now will iterate over the items of `input`.
 
 ```javascript
-         dale.do (input, function (v, k) {
+         dale.go (input, function (v, k) {
 ```
 
 For every item in `output`, we'll note its type.
@@ -1511,12 +1569,15 @@ Notice that we copy `arguments`. The reason for doing is is that we want to be a
 
 By now, `output` will contain all the text we want to print, with proper colors and indentation. All that's left is to print it, in the following way:
 
-- The current UTC time, printed according to the format specified in [RFC 2822](http://tools.ietf.org/html/rfc2822#section-3.3).
+- The current UTC time, printed according to the format specified in [RFC 2822](http://tools.ietf.org/html/rfc2822#section-3.3). If the method is not defined (which happens in old browsers, we default to `toString` instead).
 - The colored `output`, which comes from passing `arguments` to `inner`.
 - `ansi.end`, to avoid coloring any subsequent output in the console.
 
+Notice we use `dale.clog` instead of using `console.log` directly; this allows for printing an `alert` message in browsers that don't support `console.log`.
+
 ```javascript
-      console.log ('(' + new Date ().toISOString () + ')', output + ansi.end ());
+      var d = new Date ();
+      dale.clog ('(' + d [d.toISOString ? 'toISOString' : 'toString'] () + ')', output + ansi.end ());
 ```
 
 Finally we return `false`, since this allows calling functions to print an error and return `false` in the same line. For example: `return teishi.l ('This is an error')`.
@@ -1639,7 +1700,7 @@ Earlier versions of the library pushed the chunks of the error message into `err
 We add the elements of `finalClause` to the error. If any of them is a function, we invoke it passing `compare` and `to` as arguments, and use that result in the error message.
 
 ```javascript
-         dale.do (clauses [1], function (v) {
+         dale.go (clauses [1], function (v) {
             error [index++] = typeof v !== 'function' ? v : v (compare, to);
          });
 ```
@@ -1911,7 +1972,7 @@ If `apres` is defined, we need to stringify the error, in case it contains array
 We will now iterate through `error` (which is an array), stringify each of its elements (through `teishi.p` if the element is an object or array, and through string coercion otherwise), and join the resulting array with single spaces. We will set `error` to this string.
 
 ```javascript
-      error = dale.do (error, function (v) {
+      error = dale.go (error, function (v) {
          return teishi.complex (v) ? teishi.s (v) : v + '';
       }).join (' ');
 ```
@@ -2081,7 +2142,7 @@ We deal with a special case of `multi`: if `multi` is either `each` or `eachOf`,
 In the absence of elements to validate, we consider `rule` to be fulfilled, and return `true`.
 
 ```javascript
-      if ((multi === 'each' || multi === 'eachOf') && ((typeCompare === 'array' && rule [1].length === 0) || (typeCompare === 'object' && Object.keys (rule [1]).length === 0) || rule [1] === undefined)) {
+      if ((multi === 'each' || multi === 'eachOf') && ((typeCompare === 'array' && rule [1].length === 0) || (typeCompare === 'object' && dale.keys (rule [1]).length === 0) || rule [1] === undefined)) {
          return true;
       }
 ```
@@ -2091,7 +2152,7 @@ We deal with the other special case of `multi`: if `multi` is either `oneOf` or 
 In the absence of elements to compare to, we consider `rule` to be impossible to be fulfilled. Hence, we set `result` to an error.
 
 ```javascript
-      if ((multi === 'oneOf' || multi === 'eachOf') && ((typeTo === 'array' && rule [2].length === 0) || (typeTo === 'object' && Object.keys (rule [2]).length === 0) || rule [2] === undefined)) {
+      if ((multi === 'oneOf' || multi === 'eachOf') && ((typeTo === 'array' && rule [2].length === 0) || (typeTo === 'object' && dale.keys (rule [2]).length === 0) || rule [2] === undefined)) {
          result = ['To field of teishi rule is', rule.to, 'but multi attribute', multi, 'requires it to be non-empty, at teishi step', rule];
       }
 ```
