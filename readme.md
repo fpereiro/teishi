@@ -10,6 +10,8 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 The current version of teishi, v4.0.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
+teishi is part of the [ustack](https://github.com/fpereiro/ustack), a set of libraries to build web applications which aims to be fully understandable by those who use it.
+
 ## Usage examples
 
 Validate the input of a function that receives two arguments, an integer (`counter`) and a function (`callback`). The second argument is optional.
@@ -135,7 +137,7 @@ teishi simplifies the first two parts and allows you to return false just once, 
 ```javascript
 if (teishi.stop ('myFunction', [
    ['input', input, ['array', 'undefined'], 'oneOf'],
-   [teishi.t (input) === 'array', [
+   [teishi.type (input) === 'array', [
       function () {
          return ['input.length', input.length, 3, teishi.test.equal]
       },
@@ -162,8 +164,8 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 Or you can use these links to the latest version - courtesy of [jsDelivr](https://jsdelivr.com).
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@9fe30369a2acef87ed062131c8634d858b8f3143/dale.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@8442dc09f0518b93fc9b5fbdf5268d589b7d54fd/teishi.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@aad320880d95ca9aea84a6cf30f95949223b3f12/dale.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@/teishi.js"></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -529,7 +531,7 @@ Same with the fifth element of the rule, in case it is a string.
 If both the fourth and the fifth element are defined, they have to be of different types (one being a string, the other a function).
 
 ```javascript
-[['type of multi operator', 'type of test function'], teishi.t (rule [3]), teishi.t (rule [4]), teishi.test.notEqual],
+[['type of multi operator', 'type of test function'], teishi.type (rule [3]), teishi.type (rule [4]), teishi.test.notEqual],
 ```
 
 ## Complex rules
@@ -625,7 +627,7 @@ On the flip side, you will quickly learn where to write them and also quickly yo
 Conditional rules allow you to enforce certain teishi rules only when a condition is met. Let's see an example:
 
 ```javascript
-[teishi.t (input) === 'array', [
+[teishi.type (input) === 'array', [
    function () {
       return ['input.length', input.length, 3, teishi.test.equal]
    },
@@ -633,7 +635,7 @@ Conditional rules allow you to enforce certain teishi rules only when a conditio
 ]]
 ```
 
-`teishi.t` is a simple function that returns the type of a value. When teishi is invoked, the expression `teishi.t (input) === 'array'` will be replaced by `true` or `false`, depending on the type of `input`.
+`teishi.type` is a simple function that returns the type of a value. When teishi is invoked, the expression `teishi.type (input) === 'array'` will be replaced by `true` or `false`, depending on the type of `input`.
 
 When teishi encounters a rule with the form `[boolean, array]`, teishi will only use the rules contained in `array` only if `boolean` is `true`. If the boolean is `false`, teishi will skip the rules contained in array.
 
@@ -693,23 +695,23 @@ Now that we know complex rules, we can write a teishi rule that validates teishi
 ```javascript
 [
    ['teishi rule', rule, ['function', 'boolean', 'array'], 'oneOf'],
-   [teishi.t (rule) === 'array', [
+   [teishi.type (rule) === 'array', [
       function () {
          return [
             [<conditional which will be true if this is a simple rule>, [
                ['teishi simple rule', rule, 'array'],
                ['length of teishi simple rule', rule.length, {min: 3, max: 5}, teishi.test.range],
                ['rule name', rule [0], ['string', 'array'], 'oneOf'],
-               [teishi.t (rule [0]) === 'array', [
+               [teishi.type (rule [0]) === 'array', [
                   function () {return ['rule name', rule [0].length, 2, teishi.test.equal]},
                   ['rule name', rule [0], 'string', 'each'],
                ]],
                ['rule options', rule [3], ['string', 'function', 'undefined'], 'oneOf'],
                ['rule options', rule [4], ['string', 'function', 'undefined'], 'oneOf'],
-               [teishi.t (rule [3]) === 'string', ['multi operator', rule [3], ['each', 'oneOf', 'eachOf'], 'oneOf', teishi.test.equal]],
-               [teishi.t (rule [4]) === 'string', ['multi operator', rule [4], ['each', 'oneOf', 'eachOf'], 'oneOf', teishi.test.equal]],
+               [teishi.type (rule [3]) === 'string', ['multi operator', rule [3], ['each', 'oneOf', 'eachOf'], 'oneOf', teishi.test.equal]],
+               [teishi.type (rule [4]) === 'string', ['multi operator', rule [4], ['each', 'oneOf', 'eachOf'], 'oneOf', teishi.test.equal]],
                [rule [3] !== undefined && rule [4] !== undefined, [
-                  [['type of multi operator', 'type of test function'], teishi.t (rule [3]), teishi.t (rule [4]), teishi.test.notEqual],
+                  [['type of multi operator', 'type of test function'], teishi.type (rule [3]), teishi.type (rule [4]), teishi.test.notEqual],
                ]],
             ]]
          ]
@@ -830,11 +832,11 @@ function (request, response) {
 
 teishi relies on ten helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
 
-### teishi.t
+### teishi.type
 
-`teishi.t` (short for `teishi.type`) takes an argument and returns a string indicating the value of that argument.
+`teishi.type` takes an argument and returns a string indicating the value of that argument.
 
-The purpose of `teishi.t` is to create an improved version of `typeof`. The improvements are two:
+The purpose of `teishi.type` is to create an improved version of `typeof`. The improvements are two:
 
 - Distinguish between types of numbers: `nan`, `infinity`, `integer` and `float` (all of which return `number` in `typeof`).
 - Distinguish between `array`, `date`, `null`, `regex` and `object` (all of which return `object` in `typeof`).
@@ -853,13 +855,13 @@ type (arguments)        // returns 'object'
 type (arguments, true)  // returns 'arguments'
 ```
 
-### teishi.s and teishi.p
+### teishi.str and teishi.parse
 
 Two very useful javascript functions, `JSON.stringify` and `JSON.parse`, throw an exception if they receive an invalid input.
 
 In keeping with the principle of exception-less code, teishi provides two wrappers to these functions:
-- `teishi.s`, which wraps `JSON.stringify`.
-- `teishi.p`, which wraps `JSON.parse`.
+- `teishi.str`, which wraps `JSON.stringify`.
+- `teishi.parse`, which wraps `JSON.parse`.
 
 If they receive invalid input, these two functions will return `false` instead of throwing an exception. If the input is valid, they will return the output of `JSON.stringify` and `JSON.parse`, respectively.
 
@@ -869,13 +871,13 @@ If they receive invalid input, these two functions will return `false` instead o
 
 `teishi.complex` takes an `input` and returns `true` if it's a complex object (array or object).
 
-### teishi.c
+### teishi.copy
 
-`teishi.c` (short for `teishi.copy`) takes a complex input (either an array or an object) and returns a copy.
+`teishi.copy` takes any input and returns a copy of it.
 
 This function is useful when you want to pass an array or object to a function that will modify it *and* you want the array or object in question to remain modified outside of the scope of that function. [javascript passes objects and arrays by reference](http://stackoverflow.com/questions/13104494/does-javascript-pass-by-reference/13104500#13104500), so in this case you need to copy the array or object to avoid side effects.
 
-If `input` has any [circular references](https://stackoverflow.com/questions/1493453/example-of-a-circular-reference-in-javascript), `teishi.c` will replace them with a string with the form `'[Circular]'`.
+If `input` has any [circular references](https://stackoverflow.com/questions/1493453/example-of-a-circular-reference-in-javascript), `teishi.copy` will replace them with a string with the form `'[Circular]'`.
 
 If `input` is (or contains) an `arguments` pseudo-array, it will be copied into a standard array.
 
@@ -884,34 +886,33 @@ If `input` is (or contains) an `arguments` pseudo-array, it will be copied into 
 `teishi.eq` (short for `teishi.equal`) takes two elements and returns `true` if they are equal and `false` otherwise. This function is mostly useful for comparing whether two arrays or objects contain the same things, despite being occupying distinct locations in memory. The rules for equality are as follows:
 
 - If both arguments are simple, the strict equality check is used (`===`).
-- If both arguments are complex, 1) their types must be the same (as per `teishi.t`); 2) their keys must be the same; and 3) the values for each of the keys must fulfill the same equality conditions, whether they are simple or complex.
+- If both arguments are complex, 1) their types must be the same (as per `teishi.type`); 2) their keys must be the same; and 3) the values for each of the keys must fulfill the same equality conditions, whether they are simple or complex.
 
 ### teishi.last
 
-`teishi.last` takes an array as input and returns its last element. If you pass an argument that is not an array, an error will be printed through `teishi.l` and the function will return `false`.
+`teishi.last` takes an array as its first argument and returns its last element. If you pass an argument that is not an array, an error will be printed through `teishi.clog` and the function will return `false`. This function can also receive an `arguments` pseudo-array.
 
-This function can also receive an `arguments` pseudo-array.
+You can pass an integer larger than 0 as the second argument to `teishi.last`. This will make `teishi.last` to retrieve the nth element from the end instead of the last one; for example, if you pass 2 as the second argument, `teishi.last` will return the next-to-last element of the passed array.
 
 ### teishi.time
 
 A function that returns the current date in milliseconds. If you pass a single argument to it, the date will be constructed with that argument instead of representing the current date.
 
-### teishi.l
+### teishi.clog
 
-`teishi.l` (short for `teishi.log`) serves the noble purpose of printing output to the console. All teishi functions print error messages through this function.
+`teishi.clog` serves the noble purpose of printing output to the console. All teishi functions print error messages through this function.
 
-Why use `teishi.l` instead of `console.log`?
+Why use `teishi.clog` instead of `console.log`?
 - Output comes in pretty colors, thanks to [cutting edge 1980s technology](http://en.wikipedia.org/wiki/ANSI_escape_code).
 - Complex values (arrays and objects) are expanded, so you can print nested objects without having to stringify them.
 - It prints a timestamp that can be helpful when profiling or debugging code.
-- You save three keystrokes every time you invoke this function.
 - Defaults to `alert` for very old browsers that don't support `console.log`.
 
-`teishi.l` takes one or more arguments, of any type. If the first argument is a string, and there's more than one argument passed to `teishi.l`, the first argument will be treated as a `label`, which is just some text with a different background color, followed by a colon (`:`).
+`teishi.clog` takes one or more arguments, of any type. If the first argument is a string, and there's more than one argument passed to `teishi.clog`, the first argument will be treated as a `label`, which is just some text with a different background color, followed by a colon (`:`).
 
 It is important to notice that colorized output will only be present in node.js, since there's no standard way of giving format to the javascript console in browsers.
 
-If you want to send the output of `teishi.l` to a logfile, the color codes will bother you. In this case, invoke once `teishi.lno` (short for **l**og with **no** colors), which will turn off all colorized output for any subsequent invocation to `teishi.l`.
+If you want to send the output of `teishi.clog` to a logfile, the color codes will bother you. In this case, invoke once `teishi.lno` (short for **l**og with **no** colors), which will turn off all colorized output for any subsequent invocation to `teishi.clog`.
 
 ## Custom test functions
 
@@ -921,8 +922,8 @@ To dispel your fears, here's the code of `teishi.test.type`, the most useful tes
 
 ```javascript
 teishi.test.type = teishi.makeTest (
-   function (a, b) {return teishi.t (a) === b},
-   ['should have as type', ['with type', teishi.t]]
+   function (a, b) {return teishi.type (a) === b},
+   ['should have as type', ['with type', teishi.type]]
 );
 ```
 
@@ -939,7 +940,7 @@ The `shouldClause` is the string that teishi will use to specify what kind of va
 
 input **should have as type integer** but instead is INPUT with type INPUTTYPE
 
-The `finalClause` is responsible for the final part of the error message. It is displayed at the end of the error, after the `compare` value. For example, in `teishi.test.type`, the `finalClause` is `['with type', teishi.t]`. In the error message below, the `finalClause` is responsible for the bolded text:
+The `finalClause` is responsible for the final part of the error message. It is displayed at the end of the error, after the `compare` value. For example, in `teishi.test.type`, the `finalClause` is `['with type', teishi.type]`. In the error message below, the `finalClause` is responsible for the bolded text:
 
 input should have as type integer but instead is INPUT **with type INPUTTYPE**
 
@@ -948,7 +949,7 @@ The `finalClause` can be any of the following:
 - a string or function
 - an array containing one or more strings/functions
 
-When you place a function in the `finalClause`, that function will be evaluated with `compare` and `to` as its arguments. This is why we put `teishi.t` in the `finalClause`, so that `teishi.t` will receive `compare` as argument and return its type.
+When you place a function in the `finalClause`, that function will be evaluated with `compare` and `to` as its arguments. This is why we put `teishi.type` in the `finalClause`, so that `teishi.type` will receive `compare` as argument and return its type.
 
 Earlier I said that `fun` can return either `true` or `false`, depending on the result of the validation. However, what happens if `fun` receives invalid arguments altogether? In this case, `fun` can return a special error message, in the form of an array containing text.
 
@@ -956,11 +957,11 @@ To illustrate this, let's take at look at the slightly more intimidating `teishi
 
 ```javascript
 teishi.test.match = teishi.makeTest (function (a, b) {
-   if (teishi.t (a) !== 'string') {
-      return ['Invalid comparison string passed to teishi.test.match. Comparison string must be of type string but instead is', a, 'with type', teishi.t (a)];
+   if (teishi.type (a) !== 'string') {
+      return ['Invalid comparison string passed to teishi.test.match. Comparison string must be of type string but instead is', a, 'with type', teishi.type (a)];
    }
-   if (teishi.t (b) !== 'regex') {
-      return ['Invalid regex passed to teishi.test.match. Regex must be of type regex but instead is', b, 'with type', teishi.t (b)];
+   if (teishi.type (b) !== 'regex') {
+      return ['Invalid regex passed to teishi.test.match. Regex must be of type regex but instead is', b, 'with type', teishi.type (b)];
    }
    return a.match (b) !== null;
 }, 'should match');
@@ -992,7 +993,7 @@ Please refer to readme.md to read the annotated source.
 
 ### Setup
 
-We wrap the entire file in a self-executing anonymous function. This practice is commonly named [the javascript module pattern](http://yuiblog.com/blog/2007/06/12/module-pattern/). The purpose of it is to wrap our code in a closure and hence avoid making the local variables we define here to be available outside of this module. A cursory test indicates that local variables exceed the scope of a file in the browser, but not in node.js. Globals exceed their scope despite this pattern - but we won't be using them.
+We wrap the entire file in a self-executing anonymous function. This practice is commonly named [the javascript module pattern](http://yuiblog.com/blog/2007/06/12/module-pattern/). The purpose of it is to wrap our code in a closure and hence avoid making the local variables we define here to be available outside of this module. A cursory test indicates that local variables exceed the scope of a script in the browser, but not in node.js. This means that this pattern is useful only on the browser.
 
 ```javascript
 (function () {
@@ -1004,13 +1005,13 @@ Since this file must run both in the browser and in node.js, we define a variabl
    var isNode = typeof exports === 'object';
 ```
 
-We require [dale](http://github.com/fpereiro/dale).
+We require [dale](http://github.com/fpereiro/dale). Note that, in the browser, `dale` will be loaded as a global variable.
 
 ```javascript
    var dale   = isNode ? require ('dale') : window.dale;
 ```
 
-This is the most succinct form I found to export an object containing all the public members (functions and constants) of a javascript module.
+This is the most succinct form I found to export an object containing all the public members (functions and constants) of a javascript module. Note that, in the browser, we use the global variable `teishi` to export the library.
 
 ```javascript
    if (isNode) var teishi = exports;
@@ -1055,14 +1056,14 @@ If `result` is `undefined`, we could not find `element`, so we return -1. Otherw
 
 ### Helper functions
 
-We start by defining `teishi.t`, by far the most useful function of the bunch. This function is inspired on [Douglas Crockford's remedial type function](http://javascript.crockford.com/remedial.html).
+We start by defining `teishi.type`, by far the most useful function of the bunch. This function is inspired on [Douglas Crockford's remedial type function](http://javascript.crockford.com/remedial.html).
 
-The purpose of `teishi.t` is to create an improved version of `typeof`. The improvements are two:
+The purpose of `teishi.type` is to create an improved version of `typeof`. The improvements are two:
 
 - Distinguish between `object`, `array`, `regex`, `date` and `null` (all of which return `object` in `typeof`).
 - Distinguish between types of numbers: `nan`, `infinity`, `integer` and `float` (all of which return `number` in `typeof`).
 
-Before we define `teishi.t`, we define `argdetect`, a local variable that will be `true` in most javascript engines. In Internet Explorer 8 and below, however, it is not possible to get the type of the prototype of an `arguments` pseudo-array, hence the definition of this variable (which will be used in `type` and also once more later).
+Before we define `teishi.type`, we define `argdetect`, a local variable that will be `true` in most javascript engines. In Internet Explorer 8 and below, however, it is not possible to get the type of the prototype of an `arguments` pseudo-array, hence the definition of this variable (which will be used in `type` and also once more later).
 
 The variable gets its value from a self-execution anonymous function. We need to do this since the `arguments` pseudo-array is only defined in the context of a function.
 
@@ -1070,12 +1071,12 @@ The variable gets its value from a self-execution anonymous function. We need to
    var argdetect = (function () {return Object.prototype.toString.call (arguments).match ('arguments')}) ();
 ```
 
-`teishi.t` takes a single argument (of any type, naturally) and returns a string which can be any of: `nan`, `infinity`, `integer`, `float`, `array`, `object`, `function`, `string`, `regex`, `date`, `null` and `undefined`.
+`teishi.type` takes a single argument (of any type, naturally) and returns a string which can be any of: `nan`, `infinity`, `integer`, `float`, `array`, `object`, `function`, `string`, `regex`, `date`, `null` and `undefined`.
 
-If we pass a truthy second argument to `teishi.t`, and `input` turns out to be an object, `teishi.t` will return the lowercased name of the class of the object (which, for example, can be `object` for object literals, `arguments` for `arguments` pseudo-arrays, and other, user-created classes).
+If we pass a truthy second argument to `teishi.type`, and `input` turns out to be an object, `teishi.type` will return the lowercased name of the class of the object (which, for example, can be `object` for object literals, `arguments` for `arguments` pseudo-arrays, and other, user-created classes).
 
 ```javascript
-   teishi.t = function (value, objectType) {
+   teishi.type = function (value, objectType) {
 ```
 
 We first apply `typeof` to `value`.
@@ -1090,7 +1091,7 @@ In Safari 5 and below, `typeof` returns `function` for regexes, so we need to pe
       if (type === 'function') return Object.prototype.toString.call (value).match (/regexp/i) ? 'regex' : 'function';
 ```
 
-Except for the exception of regexes in Safari we just saw above, `teishi.t` will only a result different from `typeof` if `type` is neither `object` nor `number`. If it's not the case, we `return` the `type`.
+Except for the exception of regexes in Safari we just saw above, `teishi.type` will only a result different from `typeof` if `type` is neither `object` nor `number`. If it's not the case, we `return` the `type`.
 
 ```javascript
       if (type !== 'object' && type !== 'number') return type;
@@ -1154,15 +1155,15 @@ After this, there's nothing left to do, so we close the function.
    }
 ```
 
-`teishi.s` and `teishi.p` are wrappers around `JSON.stringify` and `JSON.parse`, respectively. The only difference between these functions and their `JSON` counterparts is that if they receive invalid output, they will return `false` instead of throwing an exception.
+`teishi.str` and `teishi.parse` are wrappers around `JSON.stringify` and `JSON.parse`, respectively. The only difference between these functions and their `JSON` counterparts is that if they receive invalid output, they will return `false` instead of throwing an exception.
 
 ```javascript
-   teishi.s = function () {
+   teishi.str = function () {
       try {return JSON.stringify.apply (JSON.stringify, arguments)}
       catch (error) {return false}
    }
 
-   teishi.p = function () {
+   teishi.parse = function () {
       try {return JSON.parse.apply (JSON.parse, arguments)}
       catch (error) {return false}
    }
@@ -1172,7 +1173,7 @@ After this, there's nothing left to do, so we close the function.
 
 ```javascript
    teishi.simple = function (input) {
-      var type = teishi.t (input);
+      var type = teishi.type (input);
       return type !== 'array' && type !== 'object';
    }
 
@@ -1181,14 +1182,14 @@ After this, there's nothing left to do, so we close the function.
    }
 ```
 
-`teishi.c` does two things: 1) copy an input; 2) eliminate any circular references within the copied input.
+`teishi.copy` does two things: 1) copy an input; 2) eliminate any circular references within the copied input.
 
 The "public" interface of the function (if we allow that distinction, since in practice the user can pass extra arguments) takes a single argument, the `input` we want to copy. However, we define a private argument (`seen`) that the function will use to pass information to recursive calls.
 
 This function is recursive. On recursive calls, `input` won't represent the `input` that the user passed to the function, but rather one of the elements that are contained within the original `input`.
 
 ```javascript
-   teishi.c = function (input, seen) {
+   teishi.copy = function (input, seen) {
 ```
 
 If `input` is not an array or object, we just return the `input` itself.
@@ -1202,7 +1203,7 @@ If we're here, we know our object is complex. We detect the `inputType` of `inpu
 We initialize the `output` variable to either an empty array or object, depending on the type of input.
 
 ```javascript
-      var inputType = teishi.t (input, true);
+      var inputType = teishi.type (input, true);
       var output    = inputType === 'array' || inputType === 'arguments' ? [] : {};
 ```
 
@@ -1241,14 +1242,14 @@ If we're here, `v` is not circular. We push it onto `seen`.
          Seen.push (v);
 ```
 
-We do a recursive call to `teishi.c`, where the new `input` will be `v` itself. Note we pass a copy of `path` and append to it the key `k`. Note also we pass the `seen` array as well.
+We do a recursive call to `teishi.copy`, where the new `input` will be `v` itself. Note we pass a copy of `path` and append to it the key `k`. Note also we pass the `seen` array as well.
 
 The result of this recursive call will be set to `output [k]`.
 
 This concludes the inner function.
 
 ```javascript
-         return output [k] = teishi.c (v, Seen);
+         return output [k] = teishi.copy (v, Seen);
       });
 ```
 
@@ -1274,13 +1275,13 @@ If `a` and `b` are simple, we compare them with `===` and return the result.
 If we are here, at least one of the arguments is complex. If their type is different, we return `false`, since they can't be equal.
 
 ```javascript
-      if (teishi.t (a, true) !== teishi.t (b, true)) return false;
+      if (teishi.type (a, true) !== teishi.type (b, true)) return false;
 ```
 
 If we're here, both elements are complex and have the same type. We now compare their keys and check that they are exactly the same. To do this, instead of iterating the keys, we simply take all of them, sort them, stringify them and then compare them. If this comparison is not `true`, we know there is one key in one object that's not present in the other, hence we return `false`.
 
 ```javascript
-      if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
+      if (teishi.str (dale.keys (a).sort ()) !== teishi.str (dale.keys (b).sort ())) return false;
 ```
 
 We loop through the elements of `a`.
@@ -1299,14 +1300,15 @@ If a difference is found, this function will return `false`. If, however, both e
    }
 ```
 
-We define `teishi.last`, which will return the last element of the array which it receives as its first argument.
+We define `teishi.last`, which will return the last element of the array which it receives as its first argument. If a second element is passed to it, the function will instead return the nth element from the end.
 
-This function will ignore all other arguments passed to it. If its first argument is not an array, we print an error and return `false`.
+If its first argument is not an array, we print an error and return `false`. If its second argument is not undefined, it must be an integer larger than 0, otherwise we print an error and return `false`.
 
 ```javascript
-   teishi.last = function (a) {
-      if (['array', 'arguments'].indexOf (teishi.t (a, true)) === -1) return teishi.l ('Input to teishi.last must be array or arguments but instead has type ' + teishi.t (a, true));
-      return a [a.length - 1];
+   teishi.last = function (a, n) {
+      if (['array', 'arguments'].indexOf (teishi.type (a, true)) === -1) return teishi.clog ('First argument passed to teishi.last must be array or arguments but instead has type ' + teishi.type (a, true));
+      if (n !== undefined && (teishi.type (n) !== 'integer' || n < 1)) return teishi.clog ('Second argument passed to teishi.last must be either undefined or an integer larger than 0.');
+      return a [a.length - (n || 1)];
    }
 ```
 
@@ -1316,7 +1318,7 @@ We define `teishi.time`, which will return the current date in milliseconds. If 
    teishi.time = function (d) {return arguments.length ? new Date (d).getTime () : new Date ().getTime ()}
 ```
 
-We define two local variables useful for `teishi.l`, defined below:
+We define two local variables useful for `teishi.clog`, defined below:
 
 - `lastColor`, a variable that holds the last ansi color used, so that it is not repeated twice in a row.
 - `ansi`, an object with several defaults for printing color to the console.
@@ -1325,7 +1327,7 @@ We define two local variables useful for `teishi.l`, defined below:
    var lastColor, ansi = {
 ```
 
-The magic of `teishi.l`'s colors is done through [ANSI escape codes](http://en.wikipedia.org/wiki/ANSI_escape_code). We will define a local object `ansi` which will contain four functions.
+The magic of `teishi.clog`'s colors is done through [ANSI escape codes](http://en.wikipedia.org/wiki/ANSI_escape_code). We will define a local object `ansi` which will contain four functions.
 
 `ansi.bold` will bold the text after it, `ansi.end` will remove all format from the text after it and `ansi.white` will make white the text after it. We define them to be functions instead of constants because this will enable an invocation to `teishi.lno` (defined below) to turn off formatting.
 
@@ -1367,16 +1369,16 @@ We return the corresponding ANSI codes for coloring either text or background, d
    }
 ```
 
-We will now define `teishi.l` which is teishi's wrapper for console.log. The improvements are:
-- Colors.
+We will now define `teishi.clog` which is teishi's wrapper for console.log. The improvements are:
+- Colors (on node.js, not the browser).
 - Unlimited expansion of nested arrays and objects.
-- Time offset for profiling purposes.
+- Timestamp for profiling purposes.
 - More compact indentation/newline rules for printing nested objects.
 - Stringify functions and print their first 150 characters only.
 - Defaults to `alert` for very old browsers that don't support `console.log`.
 
 ```javascript
-   teishi.l = function () {
+   teishi.clog = function () {
 ```
 
 We define `output`, a string where we will append all the formatted text we want to print. We will initialize it to `ansi.bold`.
@@ -1398,7 +1400,7 @@ The function takes two arguments: `input`, the input to be printed, and `depth`,
 We detect the type of `input` and store it in a local variable `inputType`. We also initialize `depth` to 0, if it is undefined. Finally, we initialize `first` to `true`; this variable will be useful to see if we're processing the `first` element of a complex element.
 
 ```javascript
-         var inputType = teishi.t (input), depth = depth || 0, first = true;
+         var inputType = teishi.type (input), depth = depth || 0, first = true;
 ```
 
 If `input` is an `arguments` pseudo-array, we will set `inputType` to `'array'`.
@@ -1431,7 +1433,7 @@ We now will iterate over the items of `input`.
 For every item in `output`, we'll note its type.
 
 ```javascript
-            var typeV = teishi.t (v);
+            var typeV = teishi.type (v);
 ```
 
 If a) we are in a non-recursive (initial) call to `inner`, b) we are iterating the first element of `input` and c) this element is either a string or an integer, we'll consider this element to be a **label**. Hence, we will:
@@ -1458,7 +1460,7 @@ If this element is not the first one, we will concatenate either a space or a co
             first = false;
 ```
 
-If the element being iterated is a string and we are in a recursive call to `inner`, we surround the element with single quotes. If we did this on the initial call to `inner`, the output of `teishi.l ('Hey', 'there')` would be `'Hey', 'there'`, whereas what we want is to get `Hey there`. Another way of seeing this is that we treat differently strings that are within objects or arrays.
+If the element being iterated is a string and we are in a recursive call to `inner`, we surround the element with single quotes. If we did this on the initial call to `inner`, the output of `teishi.clog ('Hey', 'there')` would be `'Hey', 'there'`, whereas what we want is to get `Hey there`. Another way of seeing this is that we treat differently strings that are within objects or arrays.
 
 ```javascript
             if (typeV === 'string' && depth > 0) v = "'" + v + "'";
@@ -1570,7 +1572,7 @@ We close `inner` and we immediately execute it, passing `arguments` as its first
 Notice that we copy `arguments`. The reason for doing is is that we want to be able to print circular structures without falling into an infinite loop.
 
 ```javascript
-      }) (teishi.c (arguments));
+      }) (teishi.copy (arguments));
 ```
 
 By now, `output` will contain all the text we want to print, with proper colors and indentation. All that's left is to print it, in the following way:
@@ -1586,7 +1588,7 @@ Notice we use `dale.clog` instead of using `console.log` directly; this allows f
       dale.clog ('(' + d [d.toISOString ? 'toISOString' : 'toString'] () + ')', output + ansi.end ());
 ```
 
-Finally we return `false`, since this allows calling functions to print an error and return `false` in the same line. For example: `return teishi.l ('This is an error')`.
+Finally we return `false`, since this allows calling functions to print an error and return `false` in the same line. For example: `return teishi.clog ('This is an error')`.
 
 There's nothing else to do after this, so we close the function.
 
@@ -1595,7 +1597,7 @@ There's nothing else to do after this, so we close the function.
    }
 ```
 
-We add `teishi.lno`, a function that by setting `isNode` to false, will turn off coloring and formatting in all teishi output (and the output of other libraries that use `teishi.l` as well).
+We add `teishi.lno`, a function that by setting `isNode` to false, will turn off coloring and formatting in all teishi output (and the output of other libraries that use `teishi.clog` as well).
 
 ```javascript
    teishi.lno = function () {isNode = false}
@@ -1614,25 +1616,25 @@ The function receives two arguments, `fun` and `clauses`.
 If `fun` is not a function, we print an error and return `false`.
 
 ```javascript
-      if (teishi.t (fun) !== 'function') {
-         return teishi.l ('teishi.makeTest', 'fun passed to teishi.makeTest should be a function but instead is', fun, 'with type', teishi.t (fun));
+      if (teishi.type (fun) !== 'function') {
+         return teishi.clog ('teishi.makeTest', 'fun passed to teishi.makeTest should be a function but instead is', fun, 'with type', teishi.type (fun));
       }
 ```
 
 `clauses` can be either a string (if we only specify a `shouldClause` or an array (which allows us to also specify a `finalClause`). To merge both cases into one, if `clauses` is a string we wrap it in an array.
 
 ```javascript
-      if (teishi.t (clauses) !== 'string') clauses = [clauses];
+      if (teishi.type (clauses) !== 'string') clauses = [clauses];
 ```
 
 We check that `clauses` is an array and that `clauses [0]` is a string. If any of these checks fails, we print an error and return `false`.
 
 ```javascript
-      if (teishi.t (clauses) !== 'array') {
-         return teishi.l ('teishi.makeTest', 'clauses argument passed to teishi.makeTest should be an array but instead is', clauses, 'with type', teishi.t (clauses));
+      if (teishi.type (clauses) !== 'array') {
+         return teishi.clog ('teishi.makeTest', 'clauses argument passed to teishi.makeTest should be an array but instead is', clauses, 'with type', teishi.type (clauses));
       }
-      if (teishi.t (clauses [0]) !== 'string') {
-         return teishi.l ('teishi.makeTest', 'shouldClause passed to teishi.makeTest should be a string but instead is', clauses [0], 'with type', teishi.t (clauses [0]));
+      if (teishi.type (clauses [0]) !== 'string') {
+         return teishi.clog ('teishi.makeTest', 'shouldClause passed to teishi.makeTest should be a string but instead is', clauses [0], 'with type', teishi.type (clauses [0]));
       }
 ```
 
@@ -1640,12 +1642,12 @@ If `clauses [1]` is not `undefined` and not an array, we wrap it in an array. We
 
 ```javascript
       if (clauses [1] !== undefined) {
-         if (teishi.t (clauses [1]) !== 'array') clauses [1] = [clauses [1]];
+         if (teishi.type (clauses [1]) !== 'array') clauses [1] = [clauses [1]];
 
          var clausesResult = dale.stopNot (clauses [1], true, function (v) {
-            var type = teishi.t (v);
+            var type = teishi.type (v);
             if (type === 'string' || type === 'function') return true;
-            return teishi.l ('teishi.makeTest', 'Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', type);
+            return teishi.clog ('teishi.makeTest', 'Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', type);
          });
          if (clausesResult !== true) return;
       }
@@ -1679,7 +1681,7 @@ If the test was valid, we return `true`. If the test returned an array, it is an
 
 ```
          if (result === true) return true;
-         if (teishi.t (result) === 'array') return result;
+         if (teishi.type (result) === 'array') return result;
 ```
 
 If we are here, `result` is equal to `false`. We found a validation error! Below we create an array which will contain the error message.
@@ -1730,12 +1732,12 @@ Notice that all of these functions:
    teishi.test = {
 ```
 
-`teishi.test.type` uses a very simple `fun` and defines both a `shouldClause` and a `finalClause`. Notice that the second `finalClause` is the function `teishi.t`.
+`teishi.test.type` uses a very simple `fun` and defines both a `shouldClause` and a `finalClause`. Notice that the second `finalClause` is the function `teishi.type`.
 
 ```javascript
       type:     teishi.makeTest (
-         function (a, b) {return teishi.t (a) === b},
-         ['should have as type', ['with type', teishi.t]]
+         function (a, b) {return teishi.type (a) === b},
+         ['should have as type', ['with type', teishi.type]]
       ),
 ```
 
@@ -1759,15 +1761,15 @@ Their `shouldClause`s also differ by one `'no'`.
 
 ```javascript
       range:    teishi.makeTest (function (a, b) {
-         if (teishi.t (b, true) !== 'object') {
-            return ['Range options object must be an object but instead is', b, 'with type', teishi.t (b)];
+         if (teishi.type (b, true) !== 'object') {
+            return ['Range options object must be an object but instead is', b, 'with type', teishi.type (b)];
          }
 ```
 
 If there are no conditions, we return `true`.
 
 ```javascript
-         if (teishi.s (b) === '{}') return true;
+         if (teishi.str (b) === '{}') return true;
 ```
 
 We iterate through the keys of `b` and validate them.
@@ -1795,11 +1797,11 @@ We test the corresponding condition and return the result. We close the `fun` an
 
 ```javascript
       match:    teishi.makeTest (function (a, b) {
-         if (teishi.t (a) !== 'string') {
-            return ['Invalid comparison string passed to teishi.test.match. Comparison string must be of type string but instead is', a, 'with type', teishi.t (a)];
+         if (teishi.type (a) !== 'string') {
+            return ['Invalid comparison string passed to teishi.test.match. Comparison string must be of type string but instead is', a, 'with type', teishi.type (a)];
          }
-         if (teishi.t (b) !== 'regex') {
-            return ['Invalid regex passed to teishi.test.match. Regex must be of type regex but instead is', b, 'with type', teishi.t (b)];
+         if (teishi.type (b) !== 'regex') {
+            return ['Invalid regex passed to teishi.test.match. Regex must be of type regex but instead is', b, 'with type', teishi.type (b)];
          }
 ```
 
@@ -1826,7 +1828,7 @@ Although this function can be used directly in your code, you will probably neve
 We store the type of `rule` in a local variable `ruleType`.
 
 ```javascript
-      var ruleType = teishi.t (rule);
+      var ruleType = teishi.type (rule);
 ```
 
 If `ruleType` is `function` or `boolean`, the rule is valid, so we return `true`.
@@ -1860,8 +1862,8 @@ Our choice of `names` as the distinctive element of a teishi simple rule is stra
 We write an intricate conditional to check that whether the rule has a `names` as its first element. If that is **not** the case, we are dealing with a complex rule, so we return `true`.
 
 ```javascript
-      var typeFirst = teishi.t (rule [0]);
-      if (! (typeFirst === 'string' || (typeFirst === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
+      var typeFirst = teishi.type (rule [0]);
+      if (! (typeFirst === 'string' || (typeFirst === 'array' && rule [0].length === 2 && teishi.type (rule [0] [0]) === 'string' && teishi.type (rule [0] [1]) === 'string'))) return true;
 ```
 
 If we are here, we are dealing with a simple rule.
@@ -1905,7 +1907,7 @@ If we're iterating through the first three elements, we ignore them.
 We note the type of the element.
 
 ```javascript
-         var type = teishi.t (v);
+         var type = teishi.type (v);
 ```
 
 If the element is a string, it has to be the `multi` operator. We check that it is one of `'oneOf'`, `'each'` and `'eachOf'`.
@@ -1967,19 +1969,19 @@ We will now define a function `reply` which is in charge of doing a set of actio
    var reply = function (error, apres) {
 ```
 
-If `apres` is `undefined` (the default case), we want to print the error through `teishi.l`. We append `'teishi.v'` as the first element of the error, so that it's considered as the label of the error message. We return the result of calling `teishi.l`, which is always `false`.
+If `apres` is `undefined` (the default case), we want to print the error through `teishi.clog`. We append `'teishi.v'` as the first element of the error, so that it's considered as the label of the error message. We return the result of calling `teishi.clog`, which is always `false`.
 
 ```javascript
-      if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
+      if (apres === undefined) return teishi.clog.apply (teishi.clog, ['teishi.v'].concat (error));
 ```
 
 If `apres` is defined, we need to stringify the error, in case it contains arrays, objects, or other elements that can lose data when being coerced onto a string.
 
-We will now iterate through `error` (which is an array), stringify each of its elements (through `teishi.p` if the element is an object or array, and through string coercion otherwise), and join the resulting array with single spaces. We will set `error` to this string.
+We will now iterate through `error` (which is an array), stringify each of its elements (through `teishi.parse` if the element is an object or array, and through string coercion otherwise), and join the resulting array with single spaces. We will set `error` to this string.
 
 ```javascript
       error = dale.go (error, function (v) {
-         return teishi.complex (v) ? teishi.s (v) : v + '';
+         return teishi.complex (v) ? teishi.str (v) : v + '';
       }).join (' ');
 ```
 
@@ -2012,7 +2014,7 @@ We set `apres` to be the argument that was passed after `rule`. If no argument w
 A subtle point: we set `functionName` to an empty string, instead of `undefined`. This is because, for recursive function calls, we want to have a fixed number of arguments, so as to simplify writing the recursive calls. This also improves the performance of the function.
 
 ```javascript
-      if (teishi.t (first) === 'string') var functionName = first, rule = second, apres = third;
+      if (teishi.type (first) === 'string') var functionName = first, rule = second, apres = third;
       else                               var functionName = '',    rule = first,  apres = second;
 ```
 
@@ -2021,7 +2023,7 @@ Because we assume that `functionName` is defined only if the first argument is a
 We validate `apres`: it must be either `undefined`, `true`, or a function. If it's not, we print an error message and return `false`.
 
 ```javascript
-      if (apres !== undefined && apres !== true && teishi.t (apres) !== 'function') return teishi.l ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
+      if (apres !== undefined && apres !== true && teishi.type (apres) !== 'function') return teishi.clog ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 ```
 
 We invoke `teishi.ValidateRule` to check that `rule` is valid, and store the result in a local variable `validation`.
@@ -2039,7 +2041,7 @@ If `rule` is not well-formed, we pass the error to `reply` and `return`.
 We store the `type` of `rule` in a local variable `ruleType`.
 
 ```javascript
-      var ruleType = teishi.t (rule);
+      var ruleType = teishi.type (rule);
 ```
 
 Boolean rules: if `rule` is a boolean, we return the rule itself.
@@ -2066,13 +2068,13 @@ If it has length zero, there are no rules to validate, hence there can't be any 
 We store the `type` of `rule [0]` in a local variable `ruleFirstType`.
 
 ```javascript
-      var ruleFirstType = teishi.t (rule [0]);
+      var ruleFirstType = teishi.type (rule [0]);
 ```
 
 Conditional rules: if the first element of `rule` is a boolean, if `rule` has length 2, and if the second element of `rule` is an array, we treat `rule` as a conditional one.
 
 ```javascript
-      if (ruleFirstType === 'boolean' && rule.length === 2 && teishi.t (rule [1]) === 'array') {
+      if (ruleFirstType === 'boolean' && rule.length === 2 && teishi.type (rule [1]) === 'array') {
 ```
 
 If the boolean of the conditional is `false`, the second rule doesn't apply. Hence, we return `true`.
@@ -2091,7 +2093,7 @@ If we are here, the second rule within `rule` applies, so we pass it recursively
 We use again the intricate conditional from `teishi.validateRule` to determine whether this rule is **not** a simple one.
 
 ```javascript
-      if (! (ruleFirstType === 'string' || (ruleFirstType === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) {
+      if (! (ruleFirstType === 'string' || (ruleFirstType === 'array' && rule [0].length === 2 && teishi.type (rule [0] [0]) === 'string' && teishi.type (rule [0] [1]) === 'string'))) {
 ```
 
 Nested rule: we iterate the `rule` and pass each of its elements to recursive calls to `teishi.v`.
@@ -2108,7 +2110,7 @@ If any of these calls returns `false`, the loop is stopped and `false` is return
 We define the local variable `typeFourth` and `typeFifth` to hold the types of the fourth and fifth elements of the rule.
 
 ```javascript
-      var typeFourth = teishi.t (rule [3]), typeFifth = teishi.t (rule [4]);
+      var typeFourth = teishi.type (rule [3]), typeFifth = teishi.type (rule [4]);
 ```
 
 We define a local variable `test`, to store the test operator. If either the fourth or fifth elements of the array are a function, we will set `test` to that. Otherwise, the default value of `test` is `teishi.test.type`.
@@ -2140,7 +2142,7 @@ If `names` is a string, we wrap it in an array, since the test functions will be
 We note the types of `compare` and `to`.
 
 ```javascript
-      var typeCompare = teishi.t (rule [1], true), typeTo = teishi.t (rule [2], true);
+      var typeCompare = teishi.type (rule [1], true), typeTo = teishi.type (rule [2], true);
 ```
 
 We deal with a special case of `multi`: if `multi` is either `each` or `eachOf`, and the `compare` field is either `undefined`, an empty array or an empty object, we deem that there are no elements inside `compare`.

@@ -31,7 +31,7 @@ Please refer to readme.md to read the annotated source.
 
    var argdetect = (function () {return Object.prototype.toString.call (arguments).match ('arguments')}) ();
 
-   teishi.t = function (value, objectType) {
+   teishi.type = function (value, objectType) {
       var type = typeof value;
       if (type === 'function') return Object.prototype.toString.call (value).match (/regexp/i) ? 'regex' : 'function';
       if (type !== 'object' && type !== 'number') return type;
@@ -46,22 +46,22 @@ Please refer to readme.md to read the annotated source.
       type = Object.prototype.toString.call (value).replace ('[object ', '').replace (']', '').toLowerCase ();
       if (type === 'array' || type === 'date') return type;
       if (type === 'regexp') return 'regex';
-      if (objectType) return argdetect ? type : (teishi.t (value.callee) === 'function' ? 'arguments' : type);
+      if (objectType) return argdetect ? type : (teishi.type (value.callee) === 'function' ? 'arguments' : type);
       return 'object';
    }
 
-   teishi.s = function () {
+   teishi.str = function () {
       try {return JSON.stringify.apply (JSON.stringify, arguments)}
       catch (error) {return false}
    }
 
-   teishi.p = function () {
+   teishi.parse = function () {
       try {return JSON.parse.apply (JSON.parse, arguments)}
       catch (error) {return false}
    }
 
    teishi.simple = function (input) {
-      var type = teishi.t (input);
+      var type = teishi.type (input);
       return type !== 'array' && type !== 'object';
    }
 
@@ -69,11 +69,11 @@ Please refer to readme.md to read the annotated source.
       return ! teishi.simple (input);
    }
 
-   teishi.c = function (input, seen) {
+   teishi.copy = function (input, seen) {
 
       if (teishi.simple (input)) return input;
 
-      var inputType = teishi.t (input, true);
+      var inputType = teishi.type (input, true);
       var output    = inputType === 'array' || inputType === 'arguments' ? [] : {};
 
       dale.go (input, function (v, k) {
@@ -81,7 +81,7 @@ Please refer to readme.md to read the annotated source.
          var Seen = seen ? seen.concat () : [input];
          if (Seen.indexOf (v) > -1) return output [k] = '[Circular]';
          Seen.push (v);
-         return output [k] = teishi.c (v, Seen);
+         return output [k] = teishi.copy (v, Seen);
       });
 
       return output;
@@ -89,16 +89,17 @@ Please refer to readme.md to read the annotated source.
 
    teishi.eq = function (a, b) {
       if (teishi.simple (a) && teishi.simple (b)) return a === b;
-      if (teishi.t (a, true) !== teishi.t (b, true)) return false;
-      if (teishi.s (dale.keys (a).sort ()) !== teishi.s (dale.keys (b).sort ())) return false;
+      if (teishi.type (a, true) !== teishi.type (b, true)) return false;
+      if (teishi.str (dale.keys (a).sort ()) !== teishi.str (dale.keys (b).sort ())) return false;
       return dale.stop (a, false, function (v, k) {
          return teishi.eq (v, b [k]);
       }) === false ? false : true;
    }
 
-   teishi.last = function (a) {
-      if (['array', 'arguments'].indexOf (teishi.t (a, true)) === -1) return teishi.l ('Input to teishi.last must be array or arguments but instead has type ' + teishi.t (a, true));
-      return a [a.length - 1];
+   teishi.last = function (a, n) {
+      if (['array', 'arguments'].indexOf (teishi.type (a, true)) === -1) return teishi.clog ('First argument passed to teishi.last must be array or arguments but instead has type ' + teishi.type (a, true));
+      if (n !== undefined && (teishi.type (n) !== 'integer' || n < 1)) return teishi.clog ('Second argument passed to teishi.last must be either undefined or an integer larger than 0.');
+      return a [a.length - (n || 1)];
    }
 
    teishi.time = function (d) {return arguments.length ? new Date (d).getTime () : new Date ().getTime ()}
@@ -116,13 +117,13 @@ Please refer to readme.md to read the annotated source.
       }
    }
 
-   teishi.l = function () {
+   teishi.clog = function () {
 
       var output = ansi.bold ();
 
       (function inner (input, depth) {
 
-         var inputType = teishi.t (input), depth = depth || 0, first = true;
+         var inputType = teishi.type (input), depth = depth || 0, first = true;
 
          if (inputType === 'object' && Object.prototype.toString.call (input) === '[object Arguments]') inputType = 'array';
 
@@ -135,7 +136,7 @@ Please refer to readme.md to read the annotated source.
 
          dale.go (input, function (v, k) {
 
-            var typeV = teishi.t (v);
+            var typeV = teishi.type (v);
 
             if (depth === 0 && k === 0 && (typeV === 'string' || typeV === 'integer')) {
                first = false;
@@ -166,7 +167,7 @@ Please refer to readme.md to read the annotated source.
             if (inputType === 'object') output += (depth > 1 ? '\n' : '') + indent.slice (4) + ansi.white () + '}';
          }
 
-      }) (teishi.c (arguments));
+      }) (teishi.copy (arguments));
 
       var d = new Date ();
       dale.clog ('(' + d [d.toISOString ? 'toISOString' : 'toString'] () + ')', output + ansi.end ());
@@ -179,24 +180,24 @@ Please refer to readme.md to read the annotated source.
 
    teishi.makeTest = function (fun, clauses) {
 
-      if (teishi.t (fun) !== 'function') {
-         return teishi.l ('teishi.makeTest', 'fun passed to teishi.makeTest should be a function but instead is', fun, 'with type', teishi.t (fun));
+      if (teishi.type (fun) !== 'function') {
+         return teishi.clog ('teishi.makeTest', 'fun passed to teishi.makeTest should be a function but instead is', fun, 'with type', teishi.type (fun));
       }
-      if (teishi.t (clauses) === 'string') clauses = [clauses];
-      if (teishi.t (clauses) !== 'array') {
-         return teishi.l ('teishi.makeTest', 'clauses argument passed to teishi.makeTest should be an array but instead is', clauses, 'with type', teishi.t (clauses));
+      if (teishi.type (clauses) === 'string') clauses = [clauses];
+      if (teishi.type (clauses) !== 'array') {
+         return teishi.clog ('teishi.makeTest', 'clauses argument passed to teishi.makeTest should be an array but instead is', clauses, 'with type', teishi.type (clauses));
       }
-      if (teishi.t (clauses [0]) !== 'string') {
-         return teishi.l ('teishi.makeTest', 'shouldClause passed to teishi.makeTest should be a string but instead is', clauses [0], 'with type', teishi.t (clauses [0]));
+      if (teishi.type (clauses [0]) !== 'string') {
+         return teishi.clog ('teishi.makeTest', 'shouldClause passed to teishi.makeTest should be a string but instead is', clauses [0], 'with type', teishi.type (clauses [0]));
       }
 
       if (clauses [1] !== undefined) {
-         if (teishi.t (clauses [1]) !== 'array') clauses [1] = [clauses [1]];
+         if (teishi.type (clauses [1]) !== 'array') clauses [1] = [clauses [1]];
 
          var clausesResult = dale.stopNot (clauses [1], true, function (v) {
-            var type = teishi.t (v);
+            var type = teishi.type (v);
             if (type === 'string' || type === 'function') return true;
-            return teishi.l ('teishi.makeTest', 'Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', type);
+            return teishi.clog ('teishi.makeTest', 'Each finalClause passed to teishi.makeTest should be a string or a function but instead is', v, 'with type', type);
          });
          if (clausesResult !== true) return;
       }
@@ -204,7 +205,7 @@ Please refer to readme.md to read the annotated source.
       return function (functionName, names, compare, to, eachValue, ofValue) {
          var result = fun (compare, to);
          if (result === true) return true;
-         if (teishi.t (result) === 'array') return result;
+         if (teishi.type (result) === 'array') return result;
 
          var error = [], index = 0;
          if (eachValue !== undefined)  error [index++] = 'each of the';
@@ -229,8 +230,8 @@ Please refer to readme.md to read the annotated source.
    teishi.test = {
 
       type:     teishi.makeTest (
-         function (a, b) {return teishi.t (a) === b},
-         ['should have as type', ['with type', teishi.t]]
+         function (a, b) {return teishi.type (a) === b},
+         ['should have as type', ['with type', teishi.type]]
       ),
 
       equal:    teishi.makeTest (teishi.eq, 'should be equal to'),
@@ -240,10 +241,10 @@ Please refer to readme.md to read the annotated source.
       }, 'should not be equal to'),
 
       range:    teishi.makeTest (function (a, b) {
-         if (teishi.t (b, true) !== 'object') {
-            return ['Range options object must be an object but instead is', b, 'with type', teishi.t (b, true)];
+         if (teishi.type (b, true) !== 'object') {
+            return ['Range options object must be an object but instead is', b, 'with type', teishi.type (b, true)];
          }
-         if (teishi.s (b) === '{}') return true;
+         if (teishi.str (b) === '{}') return true;
          return dale.stopNot (b, true, function (v, k) {
             if (k !== 'min' && k !== 'max' && k !== 'less' && k !== 'more') {
                return ['Range options must be one of "min", "max", "less" and "more", but instead is', k]
@@ -256,11 +257,11 @@ Please refer to readme.md to read the annotated source.
       }, 'should be in range'),
 
       match:    teishi.makeTest (function (a, b) {
-         if (teishi.t (a) !== 'string') {
-            return ['Invalid comparison string passed to teishi.test.match. Comparison string must be of type string but instead is', a, 'with type', teishi.t (a)];
+         if (teishi.type (a) !== 'string') {
+            return ['Invalid comparison string passed to teishi.test.match. Comparison string must be of type string but instead is', a, 'with type', teishi.type (a)];
          }
-         if (teishi.t (b) !== 'regex') {
-            return ['Invalid regex passed to teishi.test.match. Regex must be of type regex but instead is', b, 'with type', teishi.t (b)];
+         if (teishi.type (b) !== 'regex') {
+            return ['Invalid regex passed to teishi.test.match. Regex must be of type regex but instead is', b, 'with type', teishi.type (b)];
          }
          return a.match (b) !== null;
       }, 'should match')
@@ -270,15 +271,15 @@ Please refer to readme.md to read the annotated source.
 
    teishi.validateRule = function (rule) {
 
-      var ruleType = teishi.t (rule);
+      var ruleType = teishi.type (rule);
       if (ruleType === 'function' || ruleType === 'boolean') return true;
       if (ruleType !== 'array') {
          return ['each teishi rule must be an array or boolean or function but instead is', rule, 'with type', ruleType];
       }
 
-      var typeFirst = teishi.t (rule [0]);
+      var typeFirst = teishi.type (rule [0]);
 
-      if (! (typeFirst === 'string' || (typeFirst === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) return true;
+      if (! (typeFirst === 'string' || (typeFirst === 'array' && rule [0].length === 2 && teishi.type (rule [0] [0]) === 'string' && teishi.type (rule [0] [1]) === 'string'))) return true;
 
       if (rule.length === 3) return true;
 
@@ -290,7 +291,7 @@ Please refer to readme.md to read the annotated source.
 
       var result = dale.stopNot (rule, true, function (v, k) {
          if (k < 3) return true;
-         var type = teishi.t (v);
+         var type = teishi.type (v);
          if (type === 'string') {
             if (v !== 'oneOf' && v !== 'each' && v !== 'eachOf') return ['Invalid multi parameter', v, '. Valid multi parameters are', ['oneOf', 'each', 'eachOf']];
             if (multi) return ['You can pass only one multi parameter to a teishi simple rule but instead you passed two:', rule [3], 'and', rule [4]];
@@ -310,9 +311,9 @@ Please refer to readme.md to read the annotated source.
    // *** THE MAIN FUNCTIONS ***
 
    var reply = function (error, apres) {
-      if (apres === undefined) return teishi.l.apply (teishi.l, ['teishi.v'].concat (error));
+      if (apres === undefined) return teishi.clog.apply (teishi.clog, ['teishi.v'].concat (error));
       error = dale.go (error, function (v) {
-         return teishi.complex (v) ? teishi.s (v) : v + '';
+         return teishi.complex (v) ? teishi.str (v) : v + '';
       }).join (' ');
       if (apres === true) return error;
       apres (error);
@@ -321,40 +322,40 @@ Please refer to readme.md to read the annotated source.
 
    teishi.v = function (first, second, third) {
 
-      if (teishi.t (first) === 'string') var functionName = first, rule = second, apres = third;
+      if (teishi.type (first) === 'string') var functionName = first, rule = second, apres = third;
       else                               var functionName = '',    rule = first,  apres = second;
 
-      if (apres !== undefined && apres !== true && teishi.t (apres) !== 'function') return teishi.l ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
+      if (apres !== undefined && apres !== true && teishi.type (apres) !== 'function') return teishi.clog ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 
       var validation = teishi.validateRule (rule);
       if (validation !== true) return reply (validation, apres);
 
-      var ruleType = teishi.t (rule);
+      var ruleType = teishi.type (rule);
       if (ruleType === 'boolean')  return rule;
       if (ruleType === 'function') return teishi.v (functionName, rule (), apres);
 
       if (rule.length === 0) return true;
 
-      var ruleFirstType = teishi.t (rule [0]);
-      if (ruleFirstType === 'boolean' && rule.length === 2 && teishi.t (rule [1]) === 'array') {
+      var ruleFirstType = teishi.type (rule [0]);
+      if (ruleFirstType === 'boolean' && rule.length === 2 && teishi.type (rule [1]) === 'array') {
          if (rule [0] === false) return true;
          else return teishi.v (functionName, rule [1], apres);
       }
 
-      if (! (ruleFirstType === 'string' || (ruleFirstType === 'array' && rule [0].length === 2 && teishi.t (rule [0] [0]) === 'string' && teishi.t (rule [0] [1]) === 'string'))) {
+      if (! (ruleFirstType === 'string' || (ruleFirstType === 'array' && rule [0].length === 2 && teishi.type (rule [0] [0]) === 'string' && teishi.type (rule [0] [1]) === 'string'))) {
          return dale.stopNot (rule, true, function (rule) {
             return teishi.v (functionName, rule, apres);
          });
       }
 
-      var typeFourth = teishi.t (rule [3]), typeFifth = teishi.t (rule [4]);
+      var typeFourth = teishi.type (rule [3]), typeFifth = teishi.type (rule [4]);
       var test  = typeFourth === 'function' ? rule [3] : (typeFifth === 'function' ? rule [4] : teishi.test.type);
       var multi = typeFourth === 'string'   ? rule [3] : (typeFifth === 'string'   ? rule [4] : undefined);
 
       var result;
       var names = ruleFirstType === 'array' ? rule [0] : [rule [0]];
 
-      var typeCompare = teishi.t (rule [1], true), typeTo = teishi.t (rule [2], true);
+      var typeCompare = teishi.type (rule [1], true), typeTo = teishi.type (rule [2], true);
 
       if ((multi === 'each' || multi === 'eachOf') && ((typeCompare === 'array' && rule [1].length === 0) || (typeCompare === 'object' && dale.keys (rule [1]).length === 0) || rule [1] === undefined)) {
          return true;
