@@ -1,5 +1,5 @@
 /*
-teishi - v5.0.0
+teishi - v5.0.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -514,7 +514,7 @@ To run the tests:
          ['input.last5', input.last5, false, teishi.test.equal],
          ['input.last6', input.last6, 3, teishi.test.equal],
          ['input.last7', input.last7, 2, teishi.test.equal],
-         ['input.last8', input.last8, 1, teishi.test.equal],
+         ['input.last8', input.last8, 1, teishi.test.equal]
       ]);
    }
 
