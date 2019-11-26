@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v5.0.1, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v5.0.2, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 teishi is part of the [ustack](https://github.com/fpereiro/ustack), a set of libraries to build web applications which aims to be fully understandable by those who use it.
 
@@ -164,8 +164,8 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 Or you can use these links to the latest version - courtesy of [jsDelivr](https://jsdelivr.com).
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@e074268833c7beef89796ba368b0489e0fbe5caf/dale.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@74559ed3301dcdf9acabb3b938d9eeeab8d224db/teishi.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@7e1be108aa52beef7ad84f8c31649cfa23bc8f53/dale.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@/teishi.js"></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -983,7 +983,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v5.0.1
+teishi - v5.0.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1097,7 +1097,7 @@ Except for the exception of regexes in Safari we just saw above, `teishi.type` w
       if (type !== 'object' && type !== 'number') return type;
 ```
 
-If `value` fulfills the condition above, it is an array. Hence, we return `array`.
+If `value` fulfills the condition below, it is an array. Hence, we return `array`.
 
 ```javascript
       if (value instanceof Array) return 'array';
