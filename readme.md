@@ -769,7 +769,7 @@ Finally, let's explain `apres`. `apres` is a variable that determines what is to
 
 When `apres` is set to `true`, if `teishi.v` finds an error, instead of reporting it and returning `false`, *it returns the error message itself*. By doing this, you let the function calling `teishi.v` to capture the error message and decide if it should be printed or not to the user. Sometimes it is useful to use teishi's machinery to to find out whether a given condition is matched or not, without having to report an error. I had to use this functionality in lith, when checking whether a given input was of a [certain kind](https://github.com/fpereiro/lith/blob/9bdb176118026607f2c047a3b315954fcbd111d5/lith.js#L58) or of [some other kind](https://github.com/fpereiro/lith/blob/9bdb176118026607f2c047a3b315954fcbd111d5/lith.js#L61). If it belonged to neither kind, the error message would be reported, otherwise it wouldn't.
 
-For certain situations, you might want to do some other thing with the error message. For example, if you are validation an HTTP request, you might want to write the error into the response object. This is where you can set `apres` to a function that receives the `error` as its sole argument:
+For certain situations, you might want to do some other thing with the error message. For example, if you are validating an HTTP request, you might want to write the error into the response object. This is where you can set `apres` to a function that receives the `error` as its sole argument:
 
 ```javascript
 function (request, response) {
