@@ -1,5 +1,5 @@
 /*
-teishi - v5.0.2
+teishi - v5.0.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -320,31 +320,33 @@ Please refer to readme.md to read the annotated source.
       return false;
    }
 
-   teishi.v = function (first, second, third) {
+   teishi.v = function (first, second, third, fourth) {
 
-      if (teishi.type (first) === 'string') var functionName = first, rule = second, apres = third;
-      else                               var functionName = '',    rule = first,  apres = second;
+      if (teishi.type (first) === 'string') var functionName = first, rule = second, apres = third,  prod = fourth;
+      else                                  var functionName = '',    rule = first,  apres = second, prod = third;
 
-      if (apres !== undefined && apres !== true && teishi.type (apres) !== 'function') return teishi.clog ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
+      if (! prod) {
+         if (apres !== undefined && apres !== true && teishi.type (apres) !== 'function') return teishi.clog ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 
-      var validation = teishi.validateRule (rule);
-      if (validation !== true) return reply (validation, apres);
+         var validation = teishi.validateRule (rule);
+         if (validation !== true) return reply (validation, apres);
+      }
 
       var ruleType = teishi.type (rule);
       if (ruleType === 'boolean')  return rule;
-      if (ruleType === 'function') return teishi.v (functionName, rule (), apres);
+      if (ruleType === 'function') return teishi.v (functionName, rule (), apres, prod);
 
       if (rule.length === 0) return true;
 
       var ruleFirstType = teishi.type (rule [0]);
       if (ruleFirstType === 'boolean' && rule.length === 2 && teishi.type (rule [1]) === 'array') {
          if (rule [0] === false) return true;
-         else return teishi.v (functionName, rule [1], apres);
+         else return teishi.v (functionName, rule [1], apres, prod);
       }
 
       if (! (ruleFirstType === 'string' || (ruleFirstType === 'array' && rule [0].length === 2 && teishi.type (rule [0] [0]) === 'string' && teishi.type (rule [0] [1]) === 'string'))) {
          return dale.stopNot (rule, true, function (rule) {
-            return teishi.v (functionName, rule, apres);
+            return teishi.v (functionName, rule, apres, prod);
          });
       }
 

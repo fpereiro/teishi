@@ -1,5 +1,5 @@
 /*
-teishi - v5.0.2
+teishi - v5.0.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -30,6 +30,17 @@ To run the tests:
       if (isNode) dale.clog (error);
       else        alert     (error);
       throw new Error (error);
+   }
+
+   // We override dale.clog to avoid seeing a ton of alerts on old browsers.
+   try {
+      dale.clog = console.log.bind (console);
+   }
+   catch (error) {
+      dale.clog = function () {
+         var output = dale.go (arguments, function (v) {return v === undefined ? 'undefined' : v}).join (' ');
+         if (window.console) window.console.log (output);
+      }
    }
 
    var tester = function (fun, inputs) {
@@ -505,7 +516,7 @@ To run the tests:
    function example28 (input) {
       return teishi.v ([
          ['input.time', input.time, 'integer'],
-         ['input.time', teishi.time () - input.time, {max: 10}, teishi.test.range],
+         ['input.time', teishi.time () - input.time, {max: 25}, teishi.test.range],
          ['input.last0', input.last0, false, teishi.test.equal],
          ['input.last1', input.last1, false, teishi.test.equal],
          ['input.last2', input.last2, true, teishi.test.equal],
@@ -603,6 +614,35 @@ To run the tests:
    dale.go ([[/regex/, 'regex'], [function () {}, 'function'], [new Date, 'date'], [Infinity, 'infinity'], [NaN, 'nan'], [1.5, 'float'], [0, 'integer'], ['do this', 'string'], [[], 'array'], [{}, 'object'], [null, 'null'], [undefined, 'undefined']], function (v) {
       if (teishi.type (v [0]) !== v [1]) printError ('teishi.type type error with type ' + v [1]);
    });
+
+   var noError = true;
+
+   try {
+      teishi.v ('invalid input with prod mode', teishi.v (null, undefined, true));
+   }
+   catch (error) {
+      noError = false;
+   }
+   if (noError) return printError ('Validation performed in prod mode.');
+
+   noError = true;
+   try {
+      teishi.stop ('invalid input with prod mode', teishi.v (null, undefined, true));
+   }
+   catch (error) {
+      noError = false;
+   }
+   if (noError) return printError ('Validation performed in prod mode.');
+
+   var t1 = teishi.time ();
+   dale.go (dale.times (2000), function () {
+      teishi.v ('Check prod', ['aaa', 'bb', 'string']);
+   });
+   var t2 = teishi.time ();
+   dale.go (dale.times (2000), function () {
+      teishi.v ('Check prod', ['aaa', 'bb', 'string'], undefined, true);
+   });
+   teishi.clog ('normal mode vs prod mode (ms)', t2 - t1, 'vs', teishi.time () - t2);
 
    teishi.v ('Check', [
       ['aaa', 1, 'string']

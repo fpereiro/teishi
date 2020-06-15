@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v5.0.2, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v5.0.3, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 teishi is part of the [ustack](https://github.com/fpereiro/ustack), a set of libraries to build web applications which aims to be fully understandable by those who use it.
 
@@ -164,8 +164,8 @@ teishi is written in Javascript. You can use it in the browser by sourcing dale 
 Or you can use these links to the latest version - courtesy of [jsDelivr](https://jsdelivr.com).
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@7e1be108aa52beef7ad84f8c31649cfa23bc8f53/dale.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@93b977548301d17f8b2fb31a60242ceed810b1f1/teishi.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@3199cebc19ec639abf242fd8788481b65c7dc3a3/dale.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@/teishi.js"></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -732,6 +732,7 @@ I wish I could use this code in teishi proper, but we can't because we need to w
 - `functionName`, a string. This argument is optional.
 - `rule`, which is a teishi rule (simple or complex). This argument is required.
 - `apres`, an optional argument that can be set to either `true` or a function.
+- `prod`, an optional argument that can be set to `true`.
 
 `rule` is a simple or complex teishi rule. We've already explained these in the previous two sections.
 
@@ -765,7 +766,7 @@ If `functionName` hadn't been specified, the error message would be:
 
 `widget should have as type object but instead is WIDGET with type WIDGETTYPE`
 
-Finally, let's explain `apres`. `apres` is a variable that determines what is to be done if `teishi.v` finds an error.
+Let's explain `apres`. `apres` is a variable that determines what is to be done if `teishi.v` finds an error.
 
 When `apres` is set to `true`, if `teishi.v` finds an error, instead of reporting it and returning `false`, *it returns the error message itself*. By doing this, you let the function calling `teishi.v` to capture the error message and decide if it should be printed or not to the user. Sometimes it is useful to use teishi's machinery to to find out whether a given condition is matched or not, without having to report an error. I had to use this functionality in lith, when checking whether a given input was of a [certain kind](https://github.com/fpereiro/lith/blob/9bdb176118026607f2c047a3b315954fcbd111d5/lith.js#L58) or of [some other kind](https://github.com/fpereiro/lith/blob/9bdb176118026607f2c047a3b315954fcbd111d5/lith.js#L61). If it belonged to neither kind, the error message would be reported, otherwise it wouldn't.
 
@@ -780,6 +781,8 @@ function (request, response) {
 ```
 
 In the case above, the error will not be printed to the console, but rather it will be written to the `response`.
+
+Finally, let's cover the `prod` parameter. When `prod` is set to `true`, it will turn off rule validation; in other words, the rules you pass to `teishi.v` will be assumed to be valid. This will increase teishi's performance in production settings, but should only be done when your code is thoroughly debugged.
 
 ### teishi.stop
 
@@ -983,7 +986,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v5.0.2
+teishi - v5.0.3
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -2002,7 +2005,7 @@ If we're here, it's because `apres` is a function. We pass the error to it, retu
 `teishi.stop` is a very simple wrapper around `teishi.v`, so most of the action will revolve around `teishi.v`. Without further ado, we proceed to write this function.
 
 ```javascript
-   teishi.v = function (first, second, third) {
+   teishi.v = function (first, second, third, fourth) {
 ```
 
 The only required argument to `teishi.v` is `rule`, which can be either the first or the second argument. `rule` will be the second argument only if `functionName` is passed.
@@ -2011,11 +2014,19 @@ Since a `rule` can never be a string, and `functionName` always has to be a stri
 
 We set `apres` to be the argument that was passed after `rule`. If no argument was passed, it will be `undefined`.
 
+We set `prod` to be the argument that was passed after `apres`. If no argument was passed, it will be `undefined`.
+
 A subtle point: we set `functionName` to an empty string, instead of `undefined`. This is because, for recursive function calls, we want to have a fixed number of arguments, so as to simplify writing the recursive calls. This also improves the performance of the function.
 
 ```javascript
-      if (teishi.type (first) === 'string') var functionName = first, rule = second, apres = third;
-      else                               var functionName = '',    rule = first,  apres = second;
+      if (teishi.type (first) === 'string') var functionName = first, rule = second, apres = third,  prod = fourth;
+      else                                  var functionName = '',    rule = first,  apres = second, prod = third;
+```
+
+If `prod` is not set, we proceed to perform validations. If `prod` is set to a truthy value, the validations will be skipped and the input will be assumed to be valid.
+
+```javascript
+      if (! prod) {
 ```
 
 Because we assume that `functionName` is defined only if the first argument is a string (and set its value to an empty string otherwise), `functionName` will be a string, so we don't need to validate it. This is similar to what happened with the validation-through-assumption of `names` we did in `teishi.validateRule`.
@@ -2023,19 +2034,20 @@ Because we assume that `functionName` is defined only if the first argument is a
 We validate `apres`: it must be either `undefined`, `true`, or a function. If it's not, we print an error message and return `false`.
 
 ```javascript
-      if (apres !== undefined && apres !== true && teishi.type (apres) !== 'function') return teishi.clog ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
+         if (apres !== undefined && apres !== true && teishi.type (apres) !== 'function') return teishi.clog ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 ```
 
 We invoke `teishi.ValidateRule` to check that `rule` is valid, and store the result in a local variable `validation`.
 
 ```javascript
-      var validation = teishi.validateRule (rule);
+         var validation = teishi.validateRule (rule);
 ```
 
-If `rule` is not well-formed, we pass the error to `reply` and `return`.
+If `rule` is not well-formed, we pass the error to `reply` and `return`. We close the validation block.
 
 ```javascript
-      if (validation !== true) return reply (validation, apres);
+         if (validation !== true) return reply (validation, apres);
+      }
 ```
 
 We store the `type` of `rule` in a local variable `ruleType`.
@@ -2050,11 +2062,11 @@ Boolean rules: if `rule` is a boolean, we return the rule itself.
       if (ruleType === 'boolean')  return rule;
 ```
 
-Function guards: if `rule` is a function, we invoke the `rule` and pass it recursively to `teishi.v`, taking care to also pass `functionName` and `apres`.
+Function guards: if `rule` is a function, we invoke the `rule` and pass it recursively to `teishi.v`, taking care to also pass `functionName`, `apres` and `prod`.
 
 
 ```javascript
-      if (ruleType === 'function') return teishi.v (functionName, rule (), apres);
+      if (ruleType === 'function') return teishi.v (functionName, rule (), apres, prod);
 ```
 
 If we are here, `rule` must be an array.
@@ -2086,7 +2098,7 @@ If the boolean of the conditional is `false`, the second rule doesn't apply. Hen
 If we are here, the second rule within `rule` applies, so we pass it recursively to `teishi.v`.
 
 ```javascript
-         else return teishi.v (functionName, rule [1], apres);
+         else return teishi.v (functionName, rule [1], apres, prod);
       }
 ```
 
@@ -2102,7 +2114,7 @@ If any of these calls returns `false`, the loop is stopped and `false` is return
 
 ```javascript
          return dale.stopNot (rule, true, function (rule) {
-            return teishi.v (functionName, rule, apres);
+            return teishi.v (functionName, rule, apres, prod);
          });
       }
 ```
