@@ -984,7 +984,7 @@ For more information, please refer to the annotated source code below, where I d
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 405 lines long.
+The complete source code is contained in `teishi.js`. It is about 410 lines long.
 
 Below is the annotated source.
 
