@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v5.0.3, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v5.1.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 teishi is part of the [ustack](https://github.com/fpereiro/ustack), a set of libraries to build web applications which aims to be fully understandable by those who use it.
 
@@ -165,7 +165,7 @@ Or you can use these links to the latest version - courtesy of [jsDelivr](https:
 
 ```html
 <script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@3199cebc19ec639abf242fd8788481b65c7dc3a3/dale.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@f93f247a01a08e31658fa41f3250f8bbfb3d9080/teishi.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@??/teishi.js"></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -181,8 +181,6 @@ teishi should work in any version of node.js (tested in v0.8.0 and above). Brows
 - Yandex 14.12 and above.
 
 The author wishes to thank [Browserstack](https://browserstack.com) for providing tools to test cross-browser compatibility.
-
-<a href="https://www.browserstack.com"><img src="https://bstacksupport.zendesk.com/attachments/token/kkjj6piHDCXiWrYlNXjKbFveo/?name=Logo-01.svg" width="150px" height="33px"></a>
 
 ## Simple rules
 
@@ -784,6 +782,8 @@ In the case above, the error will not be printed to the console, but rather it w
 
 Finally, let's cover the `prod` parameter. When `prod` is set to `true`, it will turn off rule validation; in other words, the rules you pass to `teishi.v` will be assumed to be valid. This will increase teishi's performance in production settings, but should only be done when your code is thoroughly debugged.
 
+If you want to turn off validations globally, you can directly set `teishi.prod` to `true`. This will be equivalent as passing a truthy `prod` parameter to every invocation of `teishi.v`.
+
 ### teishi.stop
 
 `teishi.stop` takes the same arguments as `teishi.v`.
@@ -833,7 +833,7 @@ function (request, response) {
 
 ## Helper functions
 
-teishi relies on ten helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
+teishi relies on eleven helper functions which can also be helpful beyond the domain of error checking. You can use these functions directly in your code.
 
 ### teishi.type
 
@@ -873,6 +873,10 @@ If they receive invalid input, these two functions will return `false` instead o
 `teishi.simple` takes an `input` and returns `true` if it's a simple object (anything but an array or an object).
 
 `teishi.complex` takes an `input` and returns `true` if it's a complex object (array or object).
+
+### teishi.inc
+
+A function that takes an array or an `arguments` pseudo-array as its first element and a `value` as its second argument. If `value` is contained inside the array, the function returns `true`; otherwise, it returns `false`. This is the sole teishi function that doesn't validate its arguments - this is done to save execution time in libraries that depend on teishi.
 
 ### teishi.copy
 
@@ -980,13 +984,13 @@ For more information, please refer to the annotated source code below, where I d
 
 ## Source code
 
-The complete source code is contained in `teishi.js`. It is about 400 lines long.
+The complete source code is contained in `teishi.js`. It is about 405 lines long.
 
 Below is the annotated source.
 
 ```javascript
 /*
-teishi - v5.0.3
+teishi - v5.1.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1185,6 +1189,12 @@ After this, there's nothing left to do, so we close the function.
    }
 ```
 
+`teishi.inc` returns `true` or `false` depending on whether the value `v` is contained in the array (or `arguments` pseudo-array) `a`. Note we don't validate whether `a` is an array or pseudo-array.
+
+```
+   teishi.inc = function (a, v) {return a.indexOf (v) > -1}
+```
+
 `teishi.copy` does two things: 1) copy an input; 2) eliminate any circular references within the copied input.
 
 The "public" interface of the function (if we allow that distinction, since in practice the user can pass extra arguments) takes a single argument, the `input` we want to copy. However, we define a private argument (`seen`) that the function will use to pass information to recursive calls.
@@ -1236,7 +1246,7 @@ We store the `seen` array in a new local variable named `Seen`.
 If the element currently being iterated has already been seen, we found a circular reference! We set `output [k]` to a string of the form `[Circular]`.
 
 ```javascript
-         if (Seen.indexOf (v) > -1) return output [k] = '[Circular]';
+         if (teishi.inc (Seen, v)) return output [k] = '[Circular]';
 ```
 
 If we're here, `v` is not circular. We push it onto `seen`.
@@ -1309,7 +1319,7 @@ If its first argument is not an array, we print an error and return `false`. If 
 
 ```javascript
    teishi.last = function (a, n) {
-      if (['array', 'arguments'].indexOf (teishi.type (a, true)) === -1) return teishi.clog ('First argument passed to teishi.last must be array or arguments but instead has type ' + teishi.type (a, true));
+      if (! teishi.inc (['array', 'arguments'], teishi.type (a, true))) return teishi.clog ('First argument passed to teishi.last must be array or arguments but instead has type ' + teishi.type (a, true));
       if (n !== undefined && (teishi.type (n) !== 'integer' || n < 1)) return teishi.clog ('Second argument passed to teishi.last must be either undefined or an integer larger than 0.');
       return a [a.length - (n || 1)];
    }
@@ -1442,7 +1452,7 @@ For every item in `output`, we'll note its type.
 If a) we are in a non-recursive (initial) call to `inner`, b) we are iterating the first element of `input` and c) this element is either a string or an integer, we'll consider this element to be a **label**. Hence, we will:
 
 - Apply a special background color to it.
-- Place a trailing colon and ansi color codes to remove the background color and then set again the bold font.
+- Place a trailing colon and ansi color codes to remove the background color and then set again the bold font. However, we will only put the trailing colon if `input` has more than one element, to avoid `output` being finished with a colon followed by nothing else.
 - Concatenate it to `output`.
 - Set `first` to `true`.
 - Exit this iteration (with `return`) since there's nothing else to do with this element.
@@ -1452,7 +1462,7 @@ In this case, we will return the label.
 ```javascript
             if (depth === 0 && k === 0 && (typeV === 'string' || typeV === 'integer')) {
                first = false;
-               return output += ansi.color (true) + v + ':' + ansi.end () + ansi.bold ();
+               return output += ansi.color (true) + v + (input.length > 1 ? ':' : '') + ansi.end () + ansi.bold ();
             }
 ```
 
@@ -2023,10 +2033,10 @@ A subtle point: we set `functionName` to an empty string, instead of `undefined`
       else                                  var functionName = '',    rule = first,  apres = second, prod = third;
 ```
 
-If `prod` is not set, we proceed to perform validations. If `prod` is set to a truthy value, the validations will be skipped and the input will be assumed to be valid.
+If neither `prod` nor `teishi.prod` is set, we proceed to perform validations. If, on the contrary, either `prod` or `teishi.prod` are set to a truthy value, the validations will be skipped and the input will be assumed to be valid.
 
 ```javascript
-      if (! prod) {
+      if (! (prod || teishi.prod)) {
 ```
 
 Because we assume that `functionName` is defined only if the first argument is a string (and set its value to an empty string otherwise), `functionName` will be a string, so we don't need to validate it. This is similar to what happened with the validation-through-assumption of `names` we did in `teishi.validateRule`.

@@ -1,5 +1,5 @@
 /*
-teishi - v5.0.3
+teishi - v5.1.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -69,6 +69,8 @@ Please refer to readme.md to read the annotated source.
       return ! teishi.simple (input);
    }
 
+   teishi.inc = function (a, v) {return a.indexOf (v) > -1}
+
    teishi.copy = function (input, seen) {
 
       if (teishi.simple (input)) return input;
@@ -79,7 +81,7 @@ Please refer to readme.md to read the annotated source.
       dale.go (input, function (v, k) {
          if (teishi.simple (v)) return output [k] = v;
          var Seen = seen ? seen.concat () : [input];
-         if (Seen.indexOf (v) > -1) return output [k] = '[Circular]';
+         if (teishi.inc (Seen, v)) return output [k] = '[Circular]';
          Seen.push (v);
          return output [k] = teishi.copy (v, Seen);
       });
@@ -97,7 +99,7 @@ Please refer to readme.md to read the annotated source.
    }
 
    teishi.last = function (a, n) {
-      if (['array', 'arguments'].indexOf (teishi.type (a, true)) === -1) return teishi.clog ('First argument passed to teishi.last must be array or arguments but instead has type ' + teishi.type (a, true));
+      if (! teishi.inc (['array', 'arguments'], teishi.type (a, true))) return teishi.clog ('First argument passed to teishi.last must be array or arguments but instead has type ' + teishi.type (a, true));
       if (n !== undefined && (teishi.type (n) !== 'integer' || n < 1)) return teishi.clog ('Second argument passed to teishi.last must be either undefined or an integer larger than 0.');
       return a [a.length - (n || 1)];
    }
@@ -140,7 +142,7 @@ Please refer to readme.md to read the annotated source.
 
             if (depth === 0 && k === 0 && (typeV === 'string' || typeV === 'integer')) {
                first = false;
-               return output += ansi.color (true) + v + ':' + ansi.end () + ansi.bold ();
+               return output += ansi.color (true) + v + (input.length > 1 ? ':' : '') + ansi.end () + ansi.bold ();
             }
 
             if (! first) output += ansi.white () + (depth === 0 ? ' ' : ', ');
@@ -325,7 +327,7 @@ Please refer to readme.md to read the annotated source.
       if (teishi.type (first) === 'string') var functionName = first, rule = second, apres = third,  prod = fourth;
       else                                  var functionName = '',    rule = first,  apres = second, prod = third;
 
-      if (! prod) {
+      if (! (prod || teishi.prod)) {
          if (apres !== undefined && apres !== true && teishi.type (apres) !== 'function') return teishi.clog ('teishi.v', 'Invalid apres argument. Must be either undefined, true, or a function.');
 
          var validation = teishi.validateRule (rule);

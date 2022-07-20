@@ -1,5 +1,5 @@
 /*
-teishi - v5.0.3
+teishi - v5.1.0
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -615,6 +615,15 @@ To run the tests:
       if (teishi.type (v [0]) !== v [1]) printError ('teishi.type type error with type ' + v [1]);
    });
 
+   var clog = dale.clog;
+   var output = '';
+   dale.clog = function () {
+      output += dale.go (arguments, function (v) {return v === undefined ? 'undefined' : v}).join (' ');
+   }
+   teishi.clog ('Testing... 1, 2, 3.');
+   dale.clog = clog;
+   if (output.replace (/.+Testing/, '').match (':')) return clog ('Invalid teishi.clog output, should not have a trailing colon if only one argument is passed');
+
    var noError = true;
 
    try {
@@ -642,7 +651,13 @@ To run the tests:
    dale.go (dale.times (2000), function () {
       teishi.v ('Check prod', ['aaa', 'bb', 'string'], undefined, true);
    });
-   teishi.clog ('normal mode vs prod mode (ms)', t2 - t1, 'vs', teishi.time () - t2);
+   var t3 = teishi.time ();
+   teishi.prod = true;
+   dale.go (dale.times (2000), function () {
+      teishi.v ('Check prod (global)', ['aaa', 'bb', 'string'], undefined);
+   });
+   teishi.prod = false;
+   teishi.clog ('normal mode vs prod mode (ms)', t2 - t1, 'vs', t3 - t2, '&', teishi.time () - t3);
 
    teishi.v ('Check', [
       ['aaa', 1, 'string']
