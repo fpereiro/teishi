@@ -1,5 +1,5 @@
 /*
-teishi - v5.1.0
+teishi - v5.1.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -107,15 +107,15 @@ Please refer to readme.md to read the annotated source.
    teishi.time = function (d) {return arguments.length ? new Date (d).getTime () : new Date ().getTime ()}
 
    var lastColor, ansi = {
-      end:   function () {return isNode ? '\033[0m'  : ''},
-      bold:  function () {return isNode ? '\033[1m'  : ''},
-      white: function () {return isNode ? '\033[37m' : ''},
+      end:   function () {return isNode ? '\u001b[0m'  : ''},
+      bold:  function () {return isNode ? '\u001b[1m'  : ''},
+      white: function () {return isNode ? '\u001b[37m' : ''},
       color: function (reverse) {
          if (! isNode) return '';
          var color = lastColor;
          while (lastColor === color) color = Math.round (Math.random () * 5 + 1);
          lastColor = color;
-         return '\033[' + (reverse ? '4' : '3') + color + 'm';
+         return '\u001b[' + (reverse ? '4' : '3') + color + 'm';
       }
    }
 

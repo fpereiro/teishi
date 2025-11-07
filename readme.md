@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v5.1.0, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v5.1.1, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 teishi is part of the [ustack](https://github.com/fpereiro/ustack), a set of libraries to build web applications which aims to be fully understandable by those who use it.
 
@@ -990,7 +990,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v5.1.0
+teishi - v5.1.1
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -1345,9 +1345,9 @@ The magic of `teishi.clog`'s colors is done through [ANSI escape codes](http://e
 `ansi.bold` will bold the text after it, `ansi.end` will remove all format from the text after it and `ansi.white` will make white the text after it. We define them to be functions instead of constants because this will enable an invocation to `teishi.lno` (defined below) to turn off formatting.
 
 ```javascript
-      end:   function () {return isNode ? '\033[0m'  : ''},
-      bold:  function () {return isNode ? '\033[1m'  : ''},
-      white: function () {return isNode ? '\033[37m' : ''},
+      end:   function () {return isNode ? '\u001b[0m'  : ''},
+      bold:  function () {return isNode ? '\u001b[1m'  : ''},
+      white: function () {return isNode ? '\u001b[37m' : ''},
 ```
 
 Notice that if we are in the browser, all of these variables will contain an empty string.
@@ -1377,7 +1377,7 @@ We set a local variable `color` to the value of `lastColor`. We then set it to a
 We return the corresponding ANSI codes for coloring either text or background, depending on whether `reverse` is set or not.
 
 ```javascript
-         return '\033[' + (reverse ? '4' : '3') + color + 'm';
+         return '\u001b[' + (reverse ? '4' : '3') + color + 'm';
       }
    }
 ```
