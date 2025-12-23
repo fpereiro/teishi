@@ -69,7 +69,7 @@ export type Rule =
   | Rule[];
 
 /**
- * Callback function for async validation reporting
+ * Callback function for error reporting
  */
 export type ApresCallback = (error: string) => void;
 
