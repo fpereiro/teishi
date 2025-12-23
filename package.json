@@ -6,6 +6,7 @@
       "dale": "6.0.2"
    },
    "main": "teishi.js",
+   "types": "index.d.ts",
    "author": "Federico Pereiro <fpereiro@gmail.com>",
    "contributors": ["Federico Pereiro <fpereiro@gmail.com>"],
    "license": [{
