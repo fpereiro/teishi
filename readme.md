@@ -56,6 +56,23 @@ function example3 (input) {
    // If we are here, the tests passed and we can trust the input.
 ```
 
+### Using builders for more readable rules
+
+teishi provides an optional `builders.js` module with human-readable helper functions. The same validation from `example2` above can be written as:
+
+```javascript
+var b = require ('teishi/builders');
+
+function example2 (action, limit) {
+   if (teishi.stop ('example2', [
+      b.isOneOf   ('action', action, ['create', 'read', 'update', 'delete']),
+      b.isInteger ('limit', limit),
+      b.isInRange (['limit', 'page size'], limit, {min: 0, max: 100})
+   ])) return false;
+
+   // If we are here, the tests passed and we can trust the input.
+```
+
 ## Auto-activation
 
 Auto-activation means that a machine or process stops immediately when an error is found, instead of going on until the faults in the process make it break down completely. Let's restate this: **an auto-activated machine stops on its own when it detects an error.**
