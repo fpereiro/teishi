@@ -1,5 +1,5 @@
 /*
-teishi - v5.1.1
+teishi - v5.1.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
@@ -23,8 +23,9 @@ To run the tests:
 
    var isNode = typeof exports === 'object';
 
-   var dale   = isNode ? require ('dale')        : window.dale;
-   var teishi = isNode ? require ('./teishi.js') : window.teishi;
+   var dale   = isNode ? require ('dale')         : window.dale;
+   var teishi = isNode ? require ('./teishi.js')  : window.teishi;
+   var b      = isNode ? require ('./builder.js') : window.builder;
 
    var printError = function (error) {
       if (isNode) dale.clog (error);
@@ -129,6 +130,21 @@ To run the tests:
    }
 
    tester (example2, {
+      invalid1: ['creat', 200],
+      invalid2: ['create', 200],
+      invalid3: ['update', 10.5],
+      valid: ['read', 10]
+   });
+
+   function example2Builder (action, limit) {
+      if (teishi.stop ('example2', [
+         b.isOneOf   ('action', action, ['create', 'read', 'update', 'delete'], teishi.test.equal),
+         b.isInteger ('limit', limit),
+         b.isInRange (['limit', 'page size'], limit, {min: 0, max: 100})
+      ])) return false;
+   }
+
+   tester (example2Builder, {
       invalid1: ['creat', 200],
       invalid2: ['create', 200],
       invalid3: ['update', 10.5],

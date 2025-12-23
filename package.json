@@ -1,6 +1,6 @@
 {
    "name": "teishi",
-   "version": "5.1.1",
+   "version": "5.1.2",
    "description": "Tool for validating the input of functions.",
    "dependencies": {
       "dale": "6.0.2"
@@ -8,7 +8,7 @@
    "main": "teishi.js",
    "types": "index.d.ts",
    "author": "Federico Pereiro <fpereiro@gmail.com>",
-   "contributors": ["Federico Pereiro <fpereiro@gmail.com>"],
+   "contributors": ["Federico Pereiro <fpereiro@gmail.com>", "Parya Rastegar <rastegar.parya3@gmail.com>"],
    "license": [{
       "type": "Public Domain",
       "url": "http://github.com/fpereiro/teishi#license"

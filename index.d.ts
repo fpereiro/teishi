@@ -1,4 +1,4 @@
-// Type definitions for teishi 5.1.1
+// Type definitions for teishi 5.1.2
 // Project: https://github.com/fpereiro/teishi
 // Definitions by: TypeScript Community
 

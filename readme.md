@@ -8,7 +8,7 @@ teishi means "stop" in Japanese. The inspiration for the library comes from the 
 
 ## Current status of the project
 
-The current version of teishi, v5.1.1, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
+The current version of teishi, v5.1.2, is considered to be *stable* and *complete*. [Suggestions](https://github.com/fpereiro/teishi/issues) and [patches](https://github.com/fpereiro/teishi/pulls) are welcome. Besides bug fixes, there are no future changes planned.
 
 teishi is part of the [ustack](https://github.com/fpereiro/ustack), a set of libraries to build web applications which aims to be fully understandable by those who use it.
 
@@ -58,10 +58,10 @@ function example3 (input) {
 
 ### Using builders for more readable rules
 
-teishi provides an optional `builders.js` module with human-readable helper functions. The same validation from `example2` above can be written as:
+Parya Rastegar has contributed an optional `builders.js` module with "human-readable helper functions". Using her logic, the same validation from `example2` above can be written as:
 
 ```javascript
-var b = require ('teishi/builders');
+var b = require ('teishi/builder');
 
 function example2 (action, limit) {
    if (teishi.stop ('example2', [
@@ -182,7 +182,7 @@ Or you can use these links to the latest version - courtesy of [jsDelivr](https:
 
 ```html
 <script src="https://cdn.jsdelivr.net/gh/fpereiro/dale@3199cebc19ec639abf242fd8788481b65c7dc3a3/dale.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@a92b50c1e9c2e86c20a33dd2360b02674547620d/teishi.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fpereiro/teishi@??/teishi.js"></script>
 ```
 
 And you also can use it in node.js. To install: `npm install teishi`
@@ -1007,7 +1007,7 @@ Below is the annotated source.
 
 ```javascript
 /*
-teishi - v5.1.1
+teishi - v5.1.2
 
 Written by Federico Pereiro (fpereiro@gmail.com) and released into the public domain.
 
