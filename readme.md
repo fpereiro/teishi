@@ -65,7 +65,7 @@ var b = require ('teishi/builder');
 
 function example2 (action, limit) {
    if (teishi.stop ('example2', [
-      b.isOneOf   ('action', action, ['create', 'read', 'update', 'delete']),
+      b.isOneOf   ('action', action, ['create', 'read', 'update', 'delete'], teishi.test.equal),
       b.isInteger ('limit', limit),
       b.isInRange (['limit', 'page size'], limit, {min: 0, max: 100})
    ])) return false;
