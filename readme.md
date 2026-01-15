@@ -286,6 +286,7 @@ teishi comes bundled with five test functions.
 - `'function'`
 - `'undefined'`
 - `'string'`
+- `'boolean'`
 
 Type detection is different to the native `typeof` operator in two ways:
 
